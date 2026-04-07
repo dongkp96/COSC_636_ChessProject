@@ -2,24 +2,37 @@ package ChessLogic;
 
 public class ChessPiece {
 
-    protected Color color;
-    protected PieceType type;
+    private Color color;
+    private PieceType type;
 
     public ChessPiece(Color color, PieceType type){
         this.color = color;
         this.type = type;
     }
 
-    @Override
-    public String toString(){
-        return this.color + " " + this.type;
+    /**
+     *
+     * @return Color enum representing the faction of the piece
+     * can be: BLACK, WHITE, NEUTRAL (for empty tile)
+     */
+    public Color getColor(){
+        return this.color;
     }
 
-    /*
-    * Method that returns the notation for the chess piece
-    * that is used for the board display. This method is used in
-    * the chessboard's displayBoard() method
-    * */
+    /**
+     *
+     * @return PieceType enum used to identify the type of
+     * chess piece it is. Planned to be used with move validation
+     */
+    public PieceType getType(){
+        return this.type;
+    }
+
+    /**
+     * @return String representing the symbol to be used for the 2D
+     * chess board display by building it based on the ChessPiece's type
+     * and Color
+     */
     public String getSymbol(){
         StringBuilder builder = new StringBuilder();
         switch(this.color){
@@ -56,7 +69,13 @@ public class ChessPiece {
         }
 
         return builder.toString();
-
-
+    }
+    /**
+     *
+     * @return String representation of the color and type of the chess piece
+     */
+    @Override
+    public String toString(){
+        return this.color + " " + this.type;
     }
 }

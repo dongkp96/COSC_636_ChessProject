@@ -18,7 +18,7 @@ public class ChessClient implements Runnable{
     }
 
     public void setOpponent(ChessClient opponent){
-
+        this.opponent = opponent;
     }
 
     public void setGameSession(GameSession game){

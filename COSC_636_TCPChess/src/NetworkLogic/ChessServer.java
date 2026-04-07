@@ -15,6 +15,11 @@ public class ChessServer {
         this.port = port;
     }
 
+    /**
+     * Start() method used to establish the server via the server socket and
+     * take connections to client sockets. Pairs the clients together and provides
+     * a GameSession object followed by starting the threads
+     */
     public void start(){
         try{
             this.socket = new ServerSocket(this.port);
@@ -43,7 +48,7 @@ public class ChessServer {
             playerOne.setGameSession(game);
             playerTwo.setGameSession(game);
             /*
-            * Provides
+            * Provides the client's a reference to the game they are playing
             * */
 
             Thread threadP1 = new Thread(playerOne);
