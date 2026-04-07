@@ -1,27 +1,29 @@
 package NetworkLogic;
+
+import ChessLogic.ChessBoard;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
-import ChessLogic.GameSession;
+import java.util.Scanner;
 
-public class ChessClient implements Runnable{
+public class ChessClient {
+    public static void main(String[] args) {
+        try{
+            Socket socket = new Socket("localhost", 50);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            //to read messages from the Client Handler
+            PrintWriter writer = new PrintWriter(socket.getOutputStream());
+            //used to write to the client handler
+            Scanner input = new Scanner(System.in);
+            //used to handle input from the terminal for the player
 
-    private Socket socket;
-    private ChessClient opponent;
-    private GameSession game;
+        }catch(IOException e){
+            System.out.println("Error with connection");
+        }
 
-    public ChessClient(Socket socket){
-        this.socket = socket;
     }
 
-    @Override
-    public void run(){
-
-    }
-
-    public void setOpponent(ChessClient opponent){
-        this.opponent = opponent;
-    }
-
-    public void setGameSession(GameSession game){
-        this.game = game;
-    }
 }

@@ -8,8 +8,8 @@ public class ChessServer {
     private boolean gameActive;
     private int port;
     private ServerSocket socket;
-    private ChessClient playerOne;
-    private ChessClient playerTwo;
+    private ClientHandler playerOne;
+    private ClientHandler playerTwo;
 
     public ChessServer(int port){
         this.port = port;
@@ -29,8 +29,8 @@ public class ChessServer {
             Socket clientSocket2 = this.socket.accept();
             //calls accept for two sockets to connect
 
-            playerOne = new ChessClient(clientSocket1);
-            playerTwo = new ChessClient(clientSocket2);
+            playerOne = new ClientHandler(clientSocket1);
+            playerTwo = new ClientHandler(clientSocket2);
             /*
             * Uses those sockets
             * */
