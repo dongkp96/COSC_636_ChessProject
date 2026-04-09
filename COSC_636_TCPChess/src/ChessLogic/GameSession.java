@@ -1,5 +1,7 @@
 package ChessLogic;
 
+import java.io.PrintWriter;
+
 public class GameSession {
 
     private Color currentTurn;
@@ -18,9 +20,10 @@ public class GameSession {
      * to check if the wait() method should be called
      *
      */
-    public synchronized void checkTurn(Color color){
+    public synchronized void checkTurn(Color color, PrintWriter writer){
         try{
             while(currentTurn != color){
+                writer.println("Waiting, current it is " + this.getCurrentTurn() + "'s turn");
                 wait();
             }
         }catch(InterruptedException e){
@@ -41,8 +44,14 @@ public class GameSession {
      *
      * @return Color enum, serves as a getter for this class
      */
+
+    public synchronized void switchTurn(){
+        this.currentTurn = (this.currentTurn == Color.WHITE) ? Color.BLACK : Color.WHITE;
+        notify();
+    }
     public synchronized Color getCurrentTurn(){
         return this.currentTurn;
+
 
     }
 }

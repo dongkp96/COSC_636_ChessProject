@@ -2,6 +2,8 @@ package NetworkLogic;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import ChessLogic.Color;
 import ChessLogic.GameSession;
 
 public class ChessServer {
@@ -20,7 +22,7 @@ public class ChessServer {
      * take connections to client sockets. Pairs the clients together and provides
      * a GameSession object followed by starting the threads
      */
-    public void start(){
+    public void start() throws IOException {
         try{
             this.socket = new ServerSocket(this.port);
             //establishes Server socket at port
@@ -32,7 +34,7 @@ public class ChessServer {
             playerOne = new ClientHandler(clientSocket1);
             playerTwo = new ClientHandler(clientSocket2);
             /*
-            * Uses those sockets
+            * Uses those sockets and uses them to construct the client handlers
             * */
 
             playerOne.setOpponent(playerTwo);
@@ -41,6 +43,10 @@ public class ChessServer {
             * Sets each player's clientHandlers with references
             * for each other, so they can message each other
             * */
+
+            playerOne.setColor(Color.WHITE);
+            playerTwo.setColor(Color.BLACK);
+            //sets the faction colors for the player's client handlers
 
             GameSession game = new GameSession();
             //creates a chess game Session
@@ -56,9 +62,19 @@ public class ChessServer {
 
             threadP1.start();
             threadP2.start();
+            //Starts the threads to run
+
+            threadP1.join();
+            threadP2.join();
+            /*
+            * Joins the threads to the main thread of the server, this stops the server from
+            * turning off to early before the clientHandlers ie game is done
+            * */
 
         }catch(IOException e){
-            System.out.println(e);
+            throw new IOException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 }
