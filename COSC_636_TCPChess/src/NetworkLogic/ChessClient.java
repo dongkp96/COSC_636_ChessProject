@@ -10,13 +10,15 @@ import java.util.Scanner;
 public class ChessClient {
     public static void main(String[] args) {
         try{
+            Scanner input = new Scanner(System.in);
+            //used to handle input from the terminal for the player
+            System.out.println("Please provide the IP address for the server");
+            String ipAddress = input.nextLine();
             Socket socket = new Socket("localhost", 50);
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             //to read messages from the Client Handler
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
             //used to write to the client handler
-            Scanner input = new Scanner(System.in);
-            //used to handle input from the terminal for the player
 
             System.out.println(reader.readLine());
             //prints the message to do your username
@@ -56,11 +58,21 @@ public class ChessClient {
                 System.out.println("Move = MOVE: followed by the desired coordinates such as e2 " +
                         "e4");
                 move = input.nextLine();
-                //gets input for the move
+                while(move.isBlank()){
+                    System.out.println("You did not enter a command. Please enter a command ");
+                    move = input.nextLine();
+                }
+                //gets input for the move and ensures move is not blank
                 writer.println(move);
                 //sends the move
                 confirmation = reader.readLine();
                 //obtains the confirmation of the move if it's valid or not
+                while(!confirmation.startsWith("VALID")){
+                    move = input.nextLine();
+                    writer.println(move);
+                    confirmation = reader.readLine();
+                }
+                //logic for an invalid move
 
                 board = reader.readLine();
                 System.out.println(board.replace("|", "\n"));

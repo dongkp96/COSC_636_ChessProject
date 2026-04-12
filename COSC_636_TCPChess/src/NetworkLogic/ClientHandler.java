@@ -26,6 +26,7 @@ public class ClientHandler implements Runnable{
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
             String move = null;
+            String toClient = null;
 
             writer.println("Please enter a username for you to use (username must contain at " +
                     "least 1 letter or number: ");
@@ -49,16 +50,26 @@ public class ClientHandler implements Runnable{
                 writer.println(this.game.getCurrentBoard());
                 writer.println(this.color + ", it is your turn. Please submit a move: ");
                 //sends the message that it is there turn
-                move = reader.readLine();
-                writer.println(game.ProcessMove(move));
-                /*
-                * Processes the move and returns a string to send to the client if it's valid or not
-                * */
+
+                do{
+                    move = reader.readLine();
+                    String[] moveParts = move.split(":");
+                    switch(moveParts[0]){
+                        case "MOVE":
+                            toClient = game.ProcessMove(moveParts[1].stripLeading());
+                            writer.println(toClient);
+                            break;
+                        default:
+                            toClient = "INVALID COMMAND";
+                            writer.println(toClient);
+                    }
+                }while(!toClient.startsWith("VALID"));
+                //Logic for handling the different commands from the client
+
                 writer.println(this.game.getCurrentBoard());
                 //if move is valid, sends the board state again to the client
                 game.switchTurn();
                 //switches the turns
-
 
             }
 
