@@ -1,7 +1,5 @@
 package NetworkLogic;
 
-import ChessLogic.ChessBoard;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -19,8 +17,6 @@ public class ChessClient {
             //used to write to the client handler
             Scanner input = new Scanner(System.in);
             //used to handle input from the terminal for the player
-            String move = null;
-            // initializes the String move, that will be the move holder
 
             System.out.println(reader.readLine());
             //prints the message to do your username
@@ -48,9 +44,29 @@ public class ChessClient {
             System.out.println(reader.readLine());
             //Used to read welcome message from the Client handler
 
-
+            String move = null;
+            // initializes the String move, that will be the move holder
+            String board = null;
             while(true){
-                //loop for client side terminal commands
+                System.out.println(reader.readLine().replace("|", "\n"));
+                //reads the board being sent to the player
+                System.out.println(reader.readLine());
+                //reads the "it is your turn message"
+                System.out.println("Commands that can be entered: ");
+                System.out.println("Move = MOVE: followed by the desired coordinates such as e2 " +
+                        "e4");
+                move = input.nextLine();
+                //gets input for the move
+                writer.println(move);
+                //sends the move
+                confirmation = reader.readLine();
+                //obtains the confirmation of the move if it's valid or not
+
+                board = reader.readLine();
+                System.out.println(board.replace("|", "\n"));
+                //prints the board out to the player
+
+
             }
 
 

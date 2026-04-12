@@ -75,36 +75,38 @@ public class ChessBoard {
     /*
     * Method used to display the chessBoard state in the following state
     *           0   1   2   3   4   5   6   7
-            0   BR  BK  BB  BQ  BK  BB  BK  BR
-            1   BP  BP  BP  BP  BP  BP  BP  BP
-            2   O   O   O   O   O   O   O   O
-            3   O   O   O   O   O   O   O   O
-            4   O   O   O   O   O   O   O   O
-            5   O   O   O   O   O   O   O   O
-            6   WP  WP  WP  WP  WP  WP  WP  WP
-            7   WR  WK  WB  WK  WQ  WB  WK  WR
+            A   BR  BG  BB  BQ  BK  BB  BG  BR
+            B   BP  BP  BP  BP  BP  BP  BP  BP
+            C   O   O   O   O   O   O   O   O
+            D   O   O   O   O   O   O   O   O
+            E   O   O   O   O   O   O   O   O
+            F   O   O   O   O   O   O   O   O
+            G   WP  WP  WP  WP  WP  WP  WP  WP
+            H   WR  WG  WB  WK  WQ  WB  WG  WR
     * Once the server and client is finished, this should return a string instead IDK
     * */
-    public void displayBoard(){
+    public String getBoard(){
         StringBuilder sb = new StringBuilder();
 
-        // Print column headers
-        sb.append(String.format("%-6s", ""));
+// Print column headers (numbers)
+        sb.append(String.format("%-8s", ""));
         for (int col = 0; col < 8; col++) {
             sb.append(String.format("%-4s", col));
         }
-        sb.append("\n");
+        sb.append("|");
 
-        // Print each row
+// Print each row with letter labels
+        char rowLabel = 'A';
         for (int row = 0; row < 8; row++) {
-            sb.append(String.format("%-6s", row));
+            sb.append(String.format("%-8s", rowLabel));
             for (int col = 0; col < 8; col++) {
                 sb.append(String.format("%-4s", board[row][col].getSymbol()));
             }
-            sb.append("\n");
+            sb.append("|");
+            rowLabel++;
         }
 
-        System.out.println(sb);
+        return sb.toString();
     }
 
     public void updateBoard(String move){

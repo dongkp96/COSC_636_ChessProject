@@ -46,11 +46,16 @@ public class ClientHandler implements Runnable{
             while(true){
                 game.checkTurn(this.color, writer);
                 //Makes the Client Handler wait if it's not their turn
+                writer.println(this.game.getCurrentBoard());
                 writer.println(this.color + ", it is your turn. Please submit a move: ");
                 //sends the message that it is there turn
                 move = reader.readLine();
-                game.ProcessMove(move);
-                //takes the move as a String from the input stream and calls process move
+                writer.println(game.ProcessMove(move));
+                /*
+                * Processes the move and returns a string to send to the client if it's valid or not
+                * */
+                writer.println(this.game.getCurrentBoard());
+                //if move is valid, sends the board state again to the client
                 game.switchTurn();
                 //switches the turns
 
