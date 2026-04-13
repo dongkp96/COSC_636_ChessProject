@@ -53,6 +53,9 @@ public class ClientHandler implements Runnable{
 
                 do{
                     move = reader.readLine();
+                    if(move == null){
+                        break;
+                    }
                     String[] moveParts = move.split(":");
                     switch(moveParts[0]){
                         case "MOVE":
@@ -65,7 +68,9 @@ public class ClientHandler implements Runnable{
                     }
                 }while(!toClient.startsWith("VALID"));
                 //Logic for handling the different commands from the client
-
+                if(move == null){
+                    break;
+                }
                 writer.println(this.game.getCurrentBoard());
                 //if move is valid, sends the board state again to the client
                 game.switchTurn();
