@@ -100,4 +100,6 @@ public class ClientHandler implements Runnable{
     public void setColor(Color color){
         this.color = color;
     }
+
+
 }

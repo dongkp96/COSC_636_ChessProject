@@ -109,6 +109,84 @@ public class ChessBoard {
         return sb.toString();
     }
 
+    public ChessPiece getPiece(int row, int col){
+        if(row < 0 || row >= 8 || col < 0 || col >= 8){
+            return null;
+        }
+        return board[row][col];
+    }
+
+    /*
+     * Method used to check whether a given row and column are inside the board
+     * Returns true if the position is valid, otherwise false
+     */
+    public boolean isInsideBoard(int row, int col){
+        return row >= 0 && row < 8 && col >= 0 && col < 8;
+    }
+
+    /*
+     * Method used to check whether a given square is empty
+     * A square is considered empty if it contains a NEUTRAL TILE piece
+     */
+    public boolean isEmpty(int row, int col){
+        if(!isInsideBoard(row, col)){
+            return false;
+        }
+
+        ChessPiece piece = board[row][col];
+        return piece.getColor() == Color.NEUTRAL && piece.getType() == PieceType.TILE;
+    }
+
+    /*
+     * Method used to place a ChessPiece at a given row and column
+     * Throws an error if the position is outside the board
+     */
+    public void setPiece(int row, int col, ChessPiece piece){
+        if(!isInsideBoard(row, col)){
+            throw new IllegalArgumentException("Board position out of bounds");
+        }
+        board[row][col] = piece;
+    }
+
+    /*
+     * Method used to move a piece from one square to another
+     * This method does not check whether the move is legal
+     * It only updates the board positions
+     */
+    public void movePiece(int fromRow, int fromCol, int toRow, int toCol){
+        if(!isInsideBoard(fromRow, fromCol) || !isInsideBoard(toRow, toCol)){
+            throw new IllegalArgumentException("Move out of bounds");
+        }
+
+        ChessPiece movingPiece = board[fromRow][fromCol];
+        board[toRow][toCol] = movingPiece;
+        board[fromRow][fromCol] = new ChessPiece(Color.NEUTRAL, PieceType.TILE);
+    }
+
+    /*
+     * Method used to check whether a given square contains a friendly piece
+     * Returns true if the square contains a piece of the given color
+     */
+    public boolean hasFriendlyPiece(int row, int col, Color color){
+        if(!isInsideBoard(row, col) || isEmpty(row, col)){
+            return false;
+        }
+
+        return board[row][col].getColor() == color;
+    }
+
+    /*
+     * Method used to check whether a given square contains an enemy piece
+     * Returns true if the square contains a piece of the opposite color
+     */
+    public boolean hasEnemyPiece(int row, int col, Color color){
+        if(!isInsideBoard(row, col) || isEmpty(row, col)){
+            return false;
+        }
+
+        return board[row][col].getColor() != color;
+    }
+
     public void updateBoard(String move){
 
 

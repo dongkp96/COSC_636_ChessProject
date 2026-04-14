@@ -7,8 +7,7 @@ import ChessLogic.Color;
 import ChessLogic.GameSession;
 
 public class ChessServer {
-    private boolean gameActive;
-    private int port;
+    private final int port;
     private ServerSocket socket;
     private ClientHandler playerOne;
     private ClientHandler playerTwo;
@@ -71,6 +70,7 @@ public class ChessServer {
             * turning off to early before the clientHandlers ie game is done
             * */
 
+            this.socket.close();
         }catch(IOException e){
             throw new IOException(e);
         } catch (InterruptedException e) {

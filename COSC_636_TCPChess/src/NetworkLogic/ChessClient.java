@@ -96,7 +96,7 @@ public class ChessClient {
 
             }
             System.out.println("Game Exited");
-
+            socket.close();
 
         }catch(IOException e){
             System.out.println("Error with connection");
