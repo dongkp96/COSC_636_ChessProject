@@ -152,7 +152,45 @@ public class ChessBoard {
         board[row][col] = piece;
     }
 
-    
+    /*
+     * Method used to move a piece from one square to another
+     * This method does not check whether the move is legal
+     * It only updates the board positions
+     */
+    public void movePiece(int fromRow, int fromCol, int toRow, int toCol){
+        if(!isInsideBoard(fromRow, fromCol) || !isInsideBoard(toRow, toCol)){
+            throw new IllegalArgumentException("Move out of bounds");
+        }
+
+        ChessPiece movingPiece = board[fromRow][fromCol];
+        board[toRow][toCol] = movingPiece;
+        board[fromRow][fromCol] = new ChessPiece(Color.NEUTRAL, PieceType.TILE);
+    }
+
+        /*
+     * Method used to check whether a given square contains a friendly piece
+     * Returns true if the square contains a piece of the given color
+     */
+    public boolean hasFriendlyPiece(int row, int col, Color color){
+        if(!isInsideBoard(row, col) || isEmpty(row, col)){
+            return false;
+        }
+
+        return board[row][col].getColor() == color;
+    }
+
+        /*
+     * Method used to check whether a given square contains an enemy piece
+     * Returns true if the square contains a piece of the opposite color
+     */
+    public boolean hasEnemyPiece(int row, int col, Color color){
+        if(!isInsideBoard(row, col) || isEmpty(row, col)){
+            return false;
+        }
+
+        return board[row][col].getColor() != color;
+    }
+
 
     public void updateBoard(String move){
 
