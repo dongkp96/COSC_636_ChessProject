@@ -85,6 +85,8 @@ public class ChessBoard {
             7   WR  WK  WB  WK  WQ  WB  WK  WR
     * Once the server and client is finished, this should return a string instead IDK
     * */
+   
+
     public void displayBoard(){
         StringBuilder sb = new StringBuilder();
 
@@ -106,6 +108,51 @@ public class ChessBoard {
 
         System.out.println(sb);
     }
+
+        /*
+     * Method used to return the ChessPiece at a given row and column
+     * If the position is outside the board, null is returned
+     */
+    public ChessPiece getPiece(int row, int col){
+        if(row < 0 || row >= 8 || col < 0 || col >= 8){
+            return null;
+        }
+        return board[row][col];
+    }
+
+        /*
+     * Method used to check whether a given row and column are inside the board
+     * Returns true if the position is valid, otherwise false
+     */
+    public boolean isInsideBoard(int row, int col){
+        return row >= 0 && row < 8 && col >= 0 && col < 8;
+    }
+
+     /*
+     * Method used to check whether a given square is empty
+     * A square is considered empty if it contains a NEUTRAL TILE piece
+     */
+    public boolean isEmpty(int row, int col){
+        if(!isInsideBoard(row, col)){
+            return false;
+        }
+
+        ChessPiece piece = board[row][col];
+        return piece.getColor() == Color.NEUTRAL && piece.getType() == PieceType.TILE;
+    }
+    
+        /*
+     * Method used to place a ChessPiece at a given row and column
+     * Throws an error if the position is outside the board
+     */
+    public void setPiece(int row, int col, ChessPiece piece){
+        if(!isInsideBoard(row, col)){
+            throw new IllegalArgumentException("Board position out of bounds");
+        }
+        board[row][col] = piece;
+    }
+
+    
 
     public void updateBoard(String move){
 
