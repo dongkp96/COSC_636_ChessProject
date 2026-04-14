@@ -36,8 +36,10 @@ public class GameSession {
      * @param move, String entered and to be processed to identify the move choice
      *              and for validation
      */
-    public void ProcessMove(String move){
+    public String ProcessMove(String move){
+        String validation = "VALID";
 
+        return validation;
     }
 
     /**
@@ -47,11 +49,14 @@ public class GameSession {
 
     public synchronized void switchTurn(){
         this.currentTurn = (this.currentTurn == Color.WHITE) ? Color.BLACK : Color.WHITE;
-        notify();
+        notifyAll();
     }
     public synchronized Color getCurrentTurn(){
         return this.currentTurn;
 
+    }
 
+    public synchronized String getCurrentBoard(){
+        return board.getBoard();
     }
 }

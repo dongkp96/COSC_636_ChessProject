@@ -26,6 +26,7 @@ public class ClientHandler implements Runnable{
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
             String move = null;
+            String toClient = null;
 
             writer.println("Please enter a username for you to use (username must contain at " +
                     "least 1 letter or number: ");
@@ -46,14 +47,34 @@ public class ClientHandler implements Runnable{
             while(true){
                 game.checkTurn(this.color, writer);
                 //Makes the Client Handler wait if it's not their turn
+                writer.println(this.game.getCurrentBoard());
                 writer.println(this.color + ", it is your turn. Please submit a move: ");
                 //sends the message that it is there turn
-                move = reader.readLine();
-                game.ProcessMove(move);
-                //takes the move as a String from the input stream and calls process move
+
+                do{
+                    move = reader.readLine();
+                    if(move == null){
+                        break;
+                    }
+                    String[] moveParts = move.split(":");
+                    switch(moveParts[0]){
+                        case "MOVE":
+                            toClient = game.ProcessMove(moveParts[1].stripLeading());
+                            writer.println(toClient);
+                            break;
+                        default:
+                            toClient = "INVALID COMMAND";
+                            writer.println(toClient);
+                    }
+                }while(!toClient.startsWith("VALID"));
+                //Logic for handling the different commands from the client
+                if(move == null){
+                    break;
+                }
+                writer.println(this.game.getCurrentBoard());
+                //if move is valid, sends the board state again to the client
                 game.switchTurn();
                 //switches the turns
-
 
             }
 
@@ -79,4 +100,6 @@ public class ClientHandler implements Runnable{
     public void setColor(Color color){
         this.color = color;
     }
+
+
 }
