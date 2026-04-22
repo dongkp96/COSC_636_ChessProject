@@ -64,8 +64,8 @@ public class ChessBoard {
                         new ChessPiece(Color.WHITE, PieceType.PAWN)},
                 {new ChessPiece(Color.WHITE, PieceType.ROOK),new ChessPiece(Color.WHITE,
                         PieceType.KNIGHT),new ChessPiece(Color.WHITE, PieceType.BISHOP),
-                        new ChessPiece(Color.WHITE, PieceType.KING),new ChessPiece(Color.WHITE,
-                        PieceType.QUEEN),new ChessPiece(Color.WHITE, PieceType.BISHOP),
+                        new ChessPiece(Color.WHITE, PieceType.QUEEN),new ChessPiece(Color.WHITE,
+                        PieceType.KING),new ChessPiece(Color.WHITE, PieceType.BISHOP),
                         new ChessPiece(Color.WHITE, PieceType.KNIGHT),new ChessPiece(Color.WHITE,
                         PieceType.ROOK)}
         };
@@ -187,8 +187,4 @@ public class ChessBoard {
         return board[row][col].getColor() != color;
     }
 
-    public void updateBoard(String move){
-
-
-    }
 }

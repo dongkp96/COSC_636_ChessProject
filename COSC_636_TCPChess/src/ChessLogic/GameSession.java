@@ -20,10 +20,9 @@ public class GameSession {
      * to check if the wait() method should be called
      *
      */
-    public synchronized void checkTurn(Color color, PrintWriter writer){
+    public synchronized void checkTurn(Color color){
         try{
             while(currentTurn != color){
-                writer.println("Waiting, current it is " + this.getCurrentTurn() + "'s turn");
                 wait();
             }
         }catch(InterruptedException e){
@@ -103,7 +102,7 @@ public class GameSession {
         }
 
         board.movePiece(fromRow, fromCol, toRow, toCol);
-        switchTurn();
+
 
         return "VALID";
     }

@@ -45,7 +45,7 @@ public class ClientHandler implements Runnable{
                     "game");
 
             while(true){
-                game.checkTurn(this.color, writer);
+                game.checkTurn(this.color);
                 //Makes the Client Handler wait if it's not their turn
                 writer.println(this.game.getCurrentBoard());
                 writer.println(this.color + ", it is your turn. Please submit a move: ");
@@ -56,10 +56,15 @@ public class ClientHandler implements Runnable{
                     if(move == null){
                         break;
                     }
+                    move = move.toUpperCase();
                     String[] moveParts = move.split(":");
                     switch(moveParts[0]){
                         case "MOVE":
                             toClient = game.ProcessMove(moveParts[1].stripLeading());
+                            writer.println(toClient);
+                            break;
+                        case "QUIT":
+                            toClient = "VALID: You have decided to quit the game. Goodbye.";
                             writer.println(toClient);
                             break;
                         default:
@@ -68,7 +73,7 @@ public class ClientHandler implements Runnable{
                     }
                 }while(!toClient.startsWith("VALID"));
                 //Logic for handling the different commands from the client
-                if(move == null){
+                if(move == null || move.startsWith("QUIT")){
                     break;
                 }
                 writer.println(this.game.getCurrentBoard());
