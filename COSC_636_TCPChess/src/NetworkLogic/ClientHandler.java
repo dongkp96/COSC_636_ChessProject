@@ -110,7 +110,7 @@ private PrintWriter writer;
             writer.println("Welcome " + this.username + " you will be "+ this.color + " in the " + "game");
 
             while(true){
-                game.checkTurn(this.color, writer);
+                game.checkTurn(this.color);
                 //Makes the Client Handler wait if it's not their turn
                 writer.println(this.game.getCurrentBoard());
                 writer.println(this.color + ", it is your turn. Please submit a move: ");
@@ -121,10 +121,15 @@ private PrintWriter writer;
                     if(move == null){
                         break;
                     }
+                    move = move.toUpperCase();
                     String[] moveParts = move.split(":");
                     switch(moveParts[0]){
                         case "MOVE":
                             toClient = game.ProcessMove(moveParts[1].stripLeading());
+                            writer.println(toClient);
+                            break;
+                        case "QUIT":
+                            toClient = "VALID: You have decided to quit the game. Goodbye.";
                             writer.println(toClient);
                             break;
                         default:
@@ -133,7 +138,7 @@ private PrintWriter writer;
                     }
                 }while(!toClient.startsWith("VALID"));
                 //Logic for handling the different commands from the client
-                if(move == null){
+                if(move == null || move.startsWith("QUIT")){
                     break;
                 }
                 writer.println(this.game.getCurrentBoard());

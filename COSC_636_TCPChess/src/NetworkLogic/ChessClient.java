@@ -8,7 +8,7 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class ChessClient {
-    public static void main(String[] args) {
+    public static void main() {
         try{
             Scanner input = new Scanner(System.in);
             //used to handle input from the terminal for the player
@@ -85,6 +85,10 @@ public class ChessClient {
                     confirmation = reader.readLine();
                 }
                 //logic for an invalid move
+                if(move.startsWith("QUIT:")){
+                    System.out.println(confirmation);
+                    break;
+                }
 
                 board = reader.readLine();
                 if(board == null){
@@ -95,11 +99,11 @@ public class ChessClient {
 
 
             }
-            System.out.println("Game Exited");
+            System.out.println("Client has exited");
             socket.close();
 
         }catch(IOException e){
-            System.out.println("Error with connection");
+            System.out.println(e);
         }
 
     }
