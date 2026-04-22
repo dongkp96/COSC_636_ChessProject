@@ -15,7 +15,8 @@ public class ClientHandler implements Runnable{
     private GameSession game;
     private String username;
     private Color color;
-
+private PrintWriter writer;
+    private volatile boolean inGame = false;
     public ClientHandler(Socket socket){
         this.socket = socket;
     }
@@ -24,7 +25,7 @@ public class ClientHandler implements Runnable{
     public void run(){
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+             writer = new PrintWriter(socket.getOutputStream(), true);
             String move = null;
             String toClient = null;
 
@@ -38,11 +39,75 @@ public class ClientHandler implements Runnable{
                 name = reader.readLine();
             }
 
+            if (!ChessServer.registerClient(name, this)) {
+                writer.println("ERROR: Username already taken");
+                socket.close();
+                return;
+                }else {
             writer.println("VALID: username is set");
             this.setUserName(name);
+                }
 
-            writer.println("Welcome " + this.username + " you will be "+ this.color + " in the " +
-                    "game");
+            //Matchmaking
+            while(!inGame) { 
+                writer.println("""
+                        Commands:
+                        AUTO  -> auto match
+                        WAIT  -> join waiting list
+                        LIST  -> view players
+                        PLAY <name> -> challenge player
+                        """);
+
+                String input = reader.readLine();
+                if (input == null) return;
+
+                String[] parts = input.split(" ");
+                String command = parts[0];
+
+                switch (command) {
+
+                    case "AUTO":
+                        try {
+                        ChessServer.enterAutoQueue(this);
+                        writer.println("Entered auto queue...");
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            writer.println("Error: Failed to enter auto queue");
+                        }
+                        break;
+
+                    case "WAIT":
+                        ChessServer.enterWaitingList(this);
+                        writer.println("Added to waiting list...");
+                        break;
+
+                    case "LIST":
+                        writer.println(ChessServer.getWaitingList(this.username));
+                        break;
+
+                    case "PLAY":
+                        if (parts.length < 2) {
+                            writer.println("ERROR: specify opponent");
+                            break;
+                        }
+
+                        boolean success = ChessServer.startMatch(this, parts[1]);
+                        if (!success) {
+                            writer.println("ERROR: opponent not available");
+                        }
+                        break;
+
+                    default:
+                        writer.println("INVALID COMMAND");
+                }
+            }
+
+            
+
+
+
+    //Game Start
+            writer.println("Welcome " + this.username + " you will be "+ this.color + " in the " + "game");
 
             while(true){
                 game.checkTurn(this.color, writer);
@@ -82,9 +147,21 @@ public class ClientHandler implements Runnable{
 
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+              ChessServer.removeClient(this);
+        try { socket.close(); } catch (IOException ignored) {}
         }
     }
+    public boolean isInGame() {
+        return inGame;
+    }
+    public String getUsername() {
+        return username;
+    }
 
+    public void setInGame(boolean inGame) {
+        this.inGame = inGame;
+    }
     public void setOpponent(ClientHandler opponent){
         this.opponent = opponent;
     }
@@ -101,5 +178,10 @@ public class ClientHandler implements Runnable{
         this.color = color;
     }
 
+    public void sendMessage(String msg) {
+        if (writer != null) {
+            writer.println(msg);
+        }
 
+}
 }
