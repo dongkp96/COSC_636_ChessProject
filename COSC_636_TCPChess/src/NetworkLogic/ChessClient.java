@@ -23,6 +23,7 @@ public class ChessClient {
 
             System.out.println(reader.readLine());
             //1. prints the message to do your username
+
             String username = input.nextLine();
             //2.takes scanner input for username
 
@@ -45,8 +46,8 @@ public class ChessClient {
             }
             //works with invalid username until its valid
 
-            System.out.println(reader.readLine());
-            //4.used to read welcome message from ClientHandler
+            System.out.println(confirmation);
+            //4.used to read username set message
 
 
             System.out.println(reader.readLine().replace("|", "\n"));
@@ -60,9 +61,10 @@ public class ChessClient {
             }
             writer.println(command);
             //6.deals with first command after initial command menu message
+
             String commandResponse;
 
-            //7 Game lobby loop
+            //7. Game lobby loop
             while(true){
                 commandResponse = reader.readLine();
                 //A. reads the command response
@@ -78,6 +80,26 @@ public class ChessClient {
                     System.out.println(commandResponse);
                 }
                 //A2: reads the command menu if command was sent to ask for menu
+
+                if(command.contains("AUTO") || command.contains("WAIT")){
+                    System.out.println("Press Enter to check if match has been found...");
+                    while(true){
+                        input.nextLine();
+                        writer.println("CHECK");
+                        commandResponse = reader.readLine();
+                        if(commandResponse.contains("MATCH_STARTED")){
+                            System.out.println(commandResponse);
+                            break;
+                        }
+                        System.out.println(commandResponse);
+                    }
+                    break;
+                    /*A3. Used to check if previous command was auto or wait, block
+                    adjusts for the WAIT or AUTO process for matchmaking, so no incorrect
+                    reads are done
+                    */
+
+                }
 
                 command = input.nextLine();
                 while(command.isBlank()){
@@ -96,7 +118,6 @@ public class ChessClient {
                 System.out.println(commandResponse);
                 //C. Receives and reads response from the command
 
-                //D if its PLAY and its not an error then likely match started
 
             }
 
@@ -105,23 +126,26 @@ public class ChessClient {
 
 
             String move = null;
-
             String board = null;
             String fromClient = null;
-            // initializes the String move, that will be the move holder
+            // initializes the String move, board, and fromClient, that will be the move holder
+
+            //8. Game loop (null breaks used to check if socket is still connected to handler
             while(true){
                 fromClient = reader.readLine();
                 if(fromClient == null){
                     break;
                 }
                 System.out.println(fromClient.replace("|", "\n"));
-                //reads the board being sent to the player
+                //A.reads the board being sent to the player
+
                 fromClient = reader.readLine();
                 if(fromClient == null){
                     break;
                 }
                 System.out.println(fromClient);
-                //reads the "it is your turn message"
+                //B.reads the "it is your turn message"
+
                 System.out.println("Commands that can be entered: ");
                 System.out.println("Move = MOVE: followed by the desired coordinates such as e2 " +
                         "e4");
@@ -130,11 +154,11 @@ public class ChessClient {
                     System.out.println("You did not enter a command. Please enter a command ");
                     move = input.nextLine();
                 }
-                //gets input for the move and ensures move is not blank
                 writer.println(move);
-                //sends the move
+                //C. gets input for the move and ensures move is not blank, then sends move
+
+
                 confirmation = reader.readLine();
-                //obtains the confirmation of the move if it's valid or not
                 if(confirmation == null){
                     break;
                 }
@@ -143,7 +167,8 @@ public class ChessClient {
                     writer.println(move);
                     confirmation = reader.readLine();
                 }
-                //logic for an invalid move
+                //D.obtains the confirmation of the move if it's valid or not
+
                 if(move.startsWith("QUIT:")){
                     System.out.println(confirmation);
                     break;
@@ -154,12 +179,13 @@ public class ChessClient {
                     break;
                 }
                 System.out.println(board.replace("|", "\n"));
-                //prints the board out to the player
+                //E.prints the board out to the player
 
 
             }
             System.out.println("Client has exited");
             socket.close();
+            //9. Socket is closed
 
         }catch(IOException e){
             System.out.println(e);

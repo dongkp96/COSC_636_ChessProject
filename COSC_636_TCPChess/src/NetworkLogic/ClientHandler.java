@@ -25,7 +25,6 @@ public class ClientHandler implements Runnable{
     @Override
     public void run(){
         try {
-            socket.setSoTimeout(1000);
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              writer = new PrintWriter(socket.getOutputStream(), true);
             String move = null;
@@ -46,13 +45,22 @@ public class ClientHandler implements Runnable{
                 writer.println("ERROR: Username already taken");
                 socket.close();
                 return;
-                }else {
-            writer.println("VALID: username is set");
-            this.setUserName(name);
-                }
+            }else {
+                this.setUserName(name);
+                writer.println("VALID: "+ this.username +" set as username");
+            }
+            /*
+            * 1. Logic for obtaining username and setting username for player
+            * */
 
+
+            socket.setSoTimeout(10000);
+            //2Sets socket timer so that no processes can block forever or gets stuck forever
+
+            //3. GameLobby logic
             writer.println("Commands: AUTO->auto match | WAIT->join waiting list | LIST->view players | PLAY <name>->challenge player");
-            //Matchmaking
+            //A1. Sends initial command list
+
             while(!inGame) {
                 try{
                     fromClient = reader.readLine();
@@ -62,14 +70,17 @@ public class ClientHandler implements Runnable{
                     }
                     continue;
                 }
+                //A. try/catch for if timeout occurs then it breaks or if successful obtains
+                // client input
 
                 if (fromClient == null) return;
+                //null check to see if client disconnected
 
                 String[] parts = fromClient.split(" ");
                 String command = parts[0].toUpperCase();
+                //B. Processes Client input
 
                 switch (command) {
-
                     case "AUTO":
                         try {
                         ChessServer.enterAutoQueue(this);
@@ -79,14 +90,17 @@ public class ClientHandler implements Runnable{
                             writer.println("Error: Failed to enter auto queue");
                         }
                         break;
+                        //Logic for autoqueueing
                     case "WAIT":
                         ChessServer.enterWaitingList(this);
                         writer.println("Added to waiting list...");
                         break;
+                        //logic for WAIT command
 
                     case "LIST":
                         writer.println(ChessServer.getWaitingList(this.username));
                         break;
+                        //logic for listing available players
 
                     case "PLAY":
                         if (parts.length < 2) {
@@ -102,6 +116,15 @@ public class ClientHandler implements Runnable{
                     case "MENU":
                         writer.println("Commands: AUTO->auto match | WAIT->join waiting list | LIST->view players | PLAY <name>->challenge player");
                         break;
+                        //logic for MENU command to resend MENU
+                    case "CHECK":
+                        if(inGame){
+                            writer.println("MATCH_STARTED: Opponent is " + this.opponent.getUsername() );
+                        }else{
+                            writer.println("Still waiting");
+                        }
+                        break;
+                        //logic for when player is in the auto queue or waiting
                     default:
                         writer.println("INVALID COMMAND");
                 }
@@ -110,15 +133,20 @@ public class ClientHandler implements Runnable{
 
 
 
-    //Game Start
+            //4.Game logic
             writer.println("Welcome " + this.username + " you will be "+ this.color + " in the " + "game");
+            //sends welcome message
             socket.setSoTimeout(0);
+            //removes timeout so players can just wait for each turn instead being on a timer
+
             while(true){
                 game.checkTurn(this.color);
-                //Makes the Client Handler wait if it's not their turn
+                //A.Makes the Client Handler wait if it's not their turn
                 writer.println(this.game.getCurrentBoard());
+                //B. Once it's the players turn then board is printed
+
                 writer.println(this.color + ", it is your turn. Please submit a move: ");
-                //sends the message that it is there turn
+                //C. sends the message that it is there turn
 
                 do{
                     move = reader.readLine();
@@ -141,14 +169,18 @@ public class ClientHandler implements Runnable{
                             writer.println(toClient);
                     }
                 }while(!toClient.startsWith("VALID"));
-                //Logic for handling the different commands from the client
+                //D. Logic for handling the different commands from the client and checking validity
+
                 if(move == null || move.startsWith("QUIT")){
                     break;
                 }
+                //E. QUIT logic
+
                 writer.println(this.game.getCurrentBoard());
-                //if move is valid, sends the board state again to the client
+                //F. if move is valid, sends the board state again to the client
+
                 game.switchTurn();
-                //switches the turns
+                //E.switches the turns
 
             }
 
