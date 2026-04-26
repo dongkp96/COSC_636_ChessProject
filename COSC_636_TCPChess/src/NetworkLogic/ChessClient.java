@@ -58,21 +58,26 @@ public class ChessClient {
                         "command as listed before");
                 command = input.nextLine();
             }
-            //6.deals with first command after initial command menu message
             writer.println(command);
+            //6.deals with first command after initial command menu message
             String commandResponse;
 
+            //7 Game lobby loop
             while(true){
                 commandResponse = reader.readLine();
+                //A. reads the command response
                 if(commandResponse.contains("MATCH_STARTED")){
+                    System.out.println(commandResponse);
                     break;
-                    //addresses if MATCH_STARTED condition is met, so loop can move onto game loop
+                    //A1: addresses if MATCH_STARTED condition is met, so loop can move onto game loop
                 }
 
                 if(command.contains("MENU")){
                     System.out.println(commandResponse.replace("|", "\n"));
+                }else{
+                    System.out.println(commandResponse);
                 }
-                //reads the command menu if command was sent to ask for menu
+                //A2: reads the command menu if command was sent to ask for menu
 
                 command = input.nextLine();
                 while(command.isBlank()){
@@ -81,7 +86,7 @@ public class ChessClient {
                     command = input.nextLine();
                 }
                 writer.println(command);
-                //Sends command to the ClientHandler
+                //B. Takes command from client and sends command to handler
 
                 commandResponse = reader.readLine();
                 if(commandResponse.contains("MATCH_STARTED")){
@@ -89,11 +94,9 @@ public class ChessClient {
                     break;
                 }
                 System.out.println(commandResponse);
-                //reads response from the command
+                //C. Receives and reads response from the command
 
-                if(command.contains("PLAY") && !commandResponse.contains("ERROR")){
-                    break;
-                }
+                //D if its PLAY and its not an error then likely match started
 
             }
 
