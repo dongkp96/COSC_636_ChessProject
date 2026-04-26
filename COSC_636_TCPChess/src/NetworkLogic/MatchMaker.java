@@ -9,12 +9,19 @@ public class MatchMaker implements Runnable {
      public void run() {
         while (true) {
             try {
-                ClientHandler p1 = ChessServer.autoQueue.take();
-                ClientHandler p2 = ChessServer.autoQueue.take();
+                /*ClientHandler p1 = ChessServer.autoQueue.take();
+                ClientHandler p2 = ChessServer.autoQueue.take();*/
 
-                if (p1.isInGame())  continue;
+                ClientHandler p1 = ChessServer.takeFromQueue();
+                ClientHandler p2 = ChessServer.takeFromQueue();
+
+                if (p1.isInGame()){
+                    ChessServer.putInQueue(p2);
+                    continue;
+
+                }
                 if (p2.isInGame()) { 
-                    ChessServer.autoQueue.put(p1); //put p1 back in the queue
+                    ChessServer.putInQueue(p1); //put p1 back in the queue
                     continue;
                 }
 

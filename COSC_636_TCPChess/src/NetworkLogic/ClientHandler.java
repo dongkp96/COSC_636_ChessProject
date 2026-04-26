@@ -7,6 +7,7 @@ import java.net.Socket;
 
 import ChessLogic.Color;
 import ChessLogic.GameSession;
+import java.net.SocketTimeoutException;
 
 public class ClientHandler implements Runnable{
 
@@ -15,7 +16,7 @@ public class ClientHandler implements Runnable{
     private GameSession game;
     private String username;
     private Color color;
-private PrintWriter writer;
+    private PrintWriter writer;
     private volatile boolean inGame = false;
     public ClientHandler(Socket socket){
         this.socket = socket;
@@ -24,10 +25,12 @@ private PrintWriter writer;
     @Override
     public void run(){
         try {
+            socket.setSoTimeout(1000);
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              writer = new PrintWriter(socket.getOutputStream(), true);
             String move = null;
             String toClient = null;
+            String fromClient = null;
 
             writer.println("Please enter a username for you to use (username must contain at " +
                     "least 1 letter or number: ");
@@ -48,21 +51,22 @@ private PrintWriter writer;
             this.setUserName(name);
                 }
 
+            writer.println("Commands: AUTO->auto match | WAIT->join waiting list | LIST->view players | PLAY <name>->challenge player");
             //Matchmaking
-            while(!inGame) { 
-                writer.println("""
-                        Commands:
-                        AUTO  -> auto match
-                        WAIT  -> join waiting list
-                        LIST  -> view players
-                        PLAY <name> -> challenge player
-                        """);
+            while(!inGame) {
+                try{
+                    fromClient = reader.readLine();
+                }catch(SocketTimeoutException e){
+                    if(inGame){
+                        break;
+                    }
+                    continue;
+                }
 
-                String input = reader.readLine();
-                if (input == null) return;
+                if (fromClient == null) return;
 
-                String[] parts = input.split(" ");
-                String command = parts[0];
+                String[] parts = fromClient.split(" ");
+                String command = parts[0].toUpperCase();
 
                 switch (command) {
 
@@ -75,7 +79,6 @@ private PrintWriter writer;
                             writer.println("Error: Failed to enter auto queue");
                         }
                         break;
-
                     case "WAIT":
                         ChessServer.enterWaitingList(this);
                         writer.println("Added to waiting list...");
@@ -96,19 +99,20 @@ private PrintWriter writer;
                             writer.println("ERROR: opponent not available");
                         }
                         break;
-
+                    case "MENU":
+                        writer.println("Commands: AUTO->auto match | WAIT->join waiting list | LIST->view players | PLAY <name>->challenge player");
+                        break;
                     default:
                         writer.println("INVALID COMMAND");
                 }
             }
-
             
 
 
 
     //Game Start
             writer.println("Welcome " + this.username + " you will be "+ this.color + " in the " + "game");
-
+            socket.setSoTimeout(0);
             while(true){
                 game.checkTurn(this.color);
                 //Makes the Client Handler wait if it's not their turn

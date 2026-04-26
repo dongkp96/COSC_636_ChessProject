@@ -9,21 +9,19 @@ import java.util.concurrent.LinkedBlockingQueue;
 import ChessLogic.Color;
 import ChessLogic.GameSession;
 
+
 public class ChessServer {
     private final int port;
     private ServerSocket serverSocket;
-    //private ClientHandler playerOne;
-    //private ClientHandler playerTwo;
-//Don't want to limit to two players
 
   // All connected clients
-    public static ConcurrentHashMap<String, ClientHandler> clients = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<String, ClientHandler> clients = new ConcurrentHashMap<>();
 
     // Manual matchmaking list
-    public static ConcurrentHashMap<String, ClientHandler> waitingList = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<String, ClientHandler> waitingList = new ConcurrentHashMap<>();
 
     // Auto matchmaking queue
-    public static BlockingQueue<ClientHandler> autoQueue = new LinkedBlockingQueue<>();
+    private static BlockingQueue<ClientHandler> autoQueue = new LinkedBlockingQueue<>();
 
     public ChessServer(int port){
         this.port = port;
@@ -71,11 +69,30 @@ public class ChessServer {
         autoQueue.put(player);
     }
 
+    /**
+     * Method used to obtain a ClientHandler from autoQueue
+     */
+    public static ClientHandler takeFromQueue() throws InterruptedException {
+        return autoQueue.take();
+    }
+
+    /**
+    * Method used to place a ClientHandler back into the autoQueue
+    * */
+    public static void putInQueue(ClientHandler handler) throws InterruptedException{
+        autoQueue.put(handler);
+    }
+
+
     public static void enterWaitingList(ClientHandler player) {
         removeFromQueues(player);
         waitingList.put(player.getUsername(), player);
     }
 
+    /**
+     *Method used to obtain String version of the waiting list
+     *@Returns String of the waiting list to be used to send to Clients
+    */
     public static String getWaitingList(String requester) {
         StringBuilder sb = new StringBuilder("WAITING PLAYERS: ");
         for (String name : waitingList.keySet()) {
@@ -86,7 +103,7 @@ public class ChessServer {
         return sb.toString();
     }
 
-    public static boolean startMatch(ClientHandler p1, String opponentName) {
+    public  static synchronized boolean startMatch(ClientHandler p1, String opponentName) {
         ClientHandler p2 = waitingList.get(opponentName);
 
         if (p2 == null || p2.isInGame()) return false;
@@ -98,14 +115,20 @@ public class ChessServer {
         return true;
     }
 
-    public static void startGame(ClientHandler p1, ClientHandler p2) {
+    public static synchronized void startGame(ClientHandler p1, ClientHandler p2) {
         GameSession game = new GameSession();
 
         p1.setOpponent(p2);
         p2.setOpponent(p1);
+        double random = Math.random();
 
-        p1.setColor(Color.WHITE);
-        p2.setColor(Color.BLACK);
+        if(random > 0.5){
+            p1.setColor(Color.WHITE);
+            p2.setColor(Color.BLACK);
+        }else{
+            p1.setColor(Color.BLACK);
+            p2.setColor(Color.WHITE);
+        }
 
         p1.setGameSession(game);
         p2.setGameSession(game);

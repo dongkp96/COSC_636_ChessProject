@@ -15,14 +15,16 @@ public class ChessClient {
             System.out.println("Please provide the IP address for the server");
             String ipAddress = input.nextLine();
             Socket socket = new Socket(ipAddress, 50);
+            //Establishes IP address for Socket
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             //to read messages from the Client Handler
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
             //used to write to the client handler
 
             System.out.println(reader.readLine());
-            //prints the message to do your username
+            //1. prints the message to do your username
             String username = input.nextLine();
+            //2.takes scanner input for username
 
             while(username.isBlank()){
                 System.out.println("Invalid username. Username must contain at least 1 letter or " +
@@ -32,7 +34,7 @@ public class ChessClient {
             //Ensures client side entry with username is correct
 
             writer.println(username);
-            //sends username to client handler to check
+            //3.sends username to client handler to check
 
             String confirmation = reader.readLine();
             while(!confirmation.startsWith("VALID")){
@@ -44,12 +46,66 @@ public class ChessClient {
             //works with invalid username until its valid
 
             System.out.println(reader.readLine());
-            //Used to read welcome message from the Client handler
+            //4.used to read welcome message from ClientHandler
+
+
+            System.out.println(reader.readLine().replace("|", "\n"));
+            //5. reads initial command menu message
+
+            String command = input.nextLine();
+            while(command.isBlank()){
+                System.out.println("Command cannot be left blank. Please input a valid " +
+                        "command as listed before");
+                command = input.nextLine();
+            }
+            //6.deals with first command after initial command menu message
+            writer.println(command);
+            String commandResponse;
+
+            while(true){
+                commandResponse = reader.readLine();
+                if(commandResponse.contains("MATCH_STARTED")){
+                    break;
+                    //addresses if MATCH_STARTED condition is met, so loop can move onto game loop
+                }
+
+                if(command.contains("MENU")){
+                    System.out.println(commandResponse.replace("|", "\n"));
+                }
+                //reads the command menu if command was sent to ask for menu
+
+                command = input.nextLine();
+                while(command.isBlank()){
+                    System.out.println("Command cannot be left blank. Please input a valid " +
+                            "command as listed before");
+                    command = input.nextLine();
+                }
+                writer.println(command);
+                //Sends command to the ClientHandler
+
+                commandResponse = reader.readLine();
+                if(commandResponse.contains("MATCH_STARTED")){
+                    System.out.println(commandResponse);
+                    break;
+                }
+                System.out.println(commandResponse);
+                //reads response from the command
+
+                if(command.contains("PLAY") && !commandResponse.contains("ERROR")){
+                    break;
+                }
+
+            }
+
+            System.out.println(reader.readLine());
+            //Used to read welcome to game message from ClientHandler
+
 
             String move = null;
-            // initializes the String move, that will be the move holder
+
             String board = null;
             String fromClient = null;
+            // initializes the String move, that will be the move holder
             while(true){
                 fromClient = reader.readLine();
                 if(fromClient == null){
