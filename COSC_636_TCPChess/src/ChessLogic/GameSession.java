@@ -6,6 +6,7 @@ public class GameSession {
 
     private Color currentTurn;
     private ChessBoard board;
+    private boolean gameActive = true;
 
     public GameSession(){
         this.currentTurn = Color.WHITE;
@@ -22,7 +23,7 @@ public class GameSession {
      */
     public synchronized void checkTurn(Color color){
         try{
-            while(currentTurn != color){
+            while(currentTurn != color && this.gameActive){
                 wait();
             }
         }catch(InterruptedException e){
@@ -324,5 +325,10 @@ public class GameSession {
         int colDiff = Math.abs(toCol - fromCol);
 
         return rowDiff <= 1 && colDiff <= 1 && !(rowDiff == 0 && colDiff == 0);
+    }
+
+    public synchronized void endGame(){
+        this.gameActive = false;
+        notifyAll();
     }
 }

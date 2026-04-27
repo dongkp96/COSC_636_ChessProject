@@ -11,13 +11,14 @@ import java.net.SocketTimeoutException;
 
 public class ClientHandler implements Runnable{
 
-    private Socket socket;
+    private final Socket socket;
     private ClientHandler opponent;
     private GameSession game;
     private String username;
     private Color color;
     private PrintWriter writer;
     private volatile boolean inGame = false;
+    private volatile String pendingChallenger = null;
     public ClientHandler(Socket socket){
         this.socket = socket;
     }
@@ -125,6 +126,33 @@ public class ClientHandler implements Runnable{
                         }
                         break;
                         //logic for when player is in the auto queue or waiting
+                    case "ACCEPT":
+                        if(pendingChallenger == null){
+                            writer.println("No pending challenge");
+                            break;
+                        }
+                        ClientHandler challenger = ChessServer.getClient(pendingChallenger);
+                        if(challenger == null){
+                            writer.println("ERROR: challenger disconnected");
+                            pendingChallenger = null;
+                            break;
+                        }
+                        ChessServer.startGame(this, challenger);
+                        pendingChallenger = null;
+                        break;
+
+                    case "REJECT":
+                        if(pendingChallenger == null){
+                            writer.println("No pending challenge");
+                            break;
+                        }
+                        ClientHandler rejectedChallenger = ChessServer.getClient(pendingChallenger);
+                        if(rejectedChallenger != null){
+                            rejectedChallenger.sendMessage("REJECTED: " + this.username + " rejected your challenge");
+                        }
+                        writer.println("Challenge rejected");
+                        pendingChallenger = null;
+                        break;
                     default:
                         writer.println("INVALID COMMAND");
                 }
@@ -142,6 +170,13 @@ public class ClientHandler implements Runnable{
             while(true){
                 game.checkTurn(this.color);
                 //A.Makes the Client Handler wait if it's not their turn
+
+                if(!this.inGame){
+                    break;
+                }
+                //A1. If the opponent quits, this gets triggered and ends the game for the
+                // handler and Client
+
                 writer.println(this.game.getCurrentBoard());
                 //B. Once it's the players turn then board is printed
 
@@ -163,6 +198,7 @@ public class ClientHandler implements Runnable{
                         case "QUIT":
                             toClient = "VALID: You have decided to quit the game. Goodbye.";
                             writer.println(toClient);
+                            opponent.notifyOpponentQuit();
                             break;
                         default:
                             toClient = "INVALID COMMAND";
@@ -224,5 +260,16 @@ public class ClientHandler implements Runnable{
             writer.println(msg);
         }
 
-}
+    }
+
+    public synchronized void notifyOpponentQuit(){
+        this.inGame = false;
+        if(game !=null){
+            game.endGame();
+        }
+    }
+
+    public void setPendingChallenger(String username){
+        this.pendingChallenger = username;
+    }
 }

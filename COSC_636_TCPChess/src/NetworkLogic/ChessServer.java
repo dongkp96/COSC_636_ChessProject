@@ -103,15 +103,23 @@ public class ChessServer {
         return sb.toString();
     }
 
+    public static ClientHandler getClient(String username){
+        return clients.get(username);
+    }
+
     public  static synchronized boolean startMatch(ClientHandler p1, String opponentName) {
         ClientHandler p2 = waitingList.get(opponentName);
 
         if (p2 == null || p2.isInGame()) return false;
 
-        removeFromQueues(p1);
-        removeFromQueues(p2);
+        p2.setPendingChallenger(p1.getUsername());
+        p2.sendMessage("CHALLENGE: " + p1.getUsername() + " wants to play. Type ACCEPT or REJECT");
+        p1.sendMessage("Challenge sent to " + opponentName + ". Waiting for response...");
 
-        startGame(p1, p2);
+        //removeFromQueues(p1);
+        //removeFromQueues(p2);
+
+        //startGame(p1, p2);
         return true;
     }
 
