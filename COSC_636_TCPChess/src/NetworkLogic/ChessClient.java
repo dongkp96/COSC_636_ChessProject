@@ -81,7 +81,8 @@ public class ChessClient {
                 }
                 //A2: reads the command menu if command was sent to ask for menu
 
-                if(command.toUpperCase().contains("AUTO") || command.toUpperCase().contains("WAIT") || command.toUpperCase().contains("PLAY")){
+                if((command.toUpperCase().contains("AUTO") || command.toUpperCase().contains(
+                        "WAIT") || command.toUpperCase().contains("PLAY"))&& !commandResponse.contains("ERROR")){
                     System.out.println("Press Enter to check if match has been found...");
                     while(true){
                         input.nextLine();
@@ -118,7 +119,7 @@ public class ChessClient {
                 System.out.println(commandResponse);
                 //C. Receives and reads response from the command
 
-                if(command.toUpperCase().contains("PLAY")){
+                if(command.toUpperCase().contains("PLAY") && !commandResponse.contains("ERROR")){
                     System.out.println("Press Enter to check if opponent has accepted...");
                     while(true){
                         input.nextLine();

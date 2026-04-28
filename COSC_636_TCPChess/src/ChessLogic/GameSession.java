@@ -1,7 +1,5 @@
 package ChessLogic;
 
-import java.io.PrintWriter;
-
 public class GameSession {
 
     private Color currentTurn;
@@ -74,6 +72,60 @@ public class GameSession {
         int fromCol;
         int toRow;
         int toCol;
+
+        switch(parts[0]){
+            case "A":
+                parts[0] = "0";
+                break;
+            case "B":
+                parts[0] = "1";
+                break;
+            case "C":
+                parts[0] = "2";
+                break;
+            case "D":
+                parts[0] = "3";
+                break;
+            case "E":
+                parts[0] = "4";
+                break;
+            case "F":
+                parts[0] = "5";
+                break;
+            case "G":
+                parts[0] = "6";
+                break;
+            case "H":
+                parts[0] = "7";
+                break;
+        }
+
+        switch(parts[2]){
+            case "A":
+                parts[2] = "0";
+                break;
+            case "B":
+                parts[2] = "1";
+                break;
+            case "C":
+                parts[2] = "2";
+                break;
+            case "D":
+                parts[2] = "3";
+                break;
+            case "E":
+                parts[2] = "4";
+                break;
+            case "F":
+                parts[2] = "5";
+                break;
+            case "G":
+                parts[2] = "6";
+                break;
+            case "H":
+                parts[2] = "7";
+                break;
+        }
 
         try{
             fromRow = Integer.parseInt(parts[0]);
