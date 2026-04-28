@@ -8,7 +8,7 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class ChessClient {
-    public static void main() {
+    public static void main(String[] args) {
         try{
             Scanner input = new Scanner(System.in);
             //used to handle input from the terminal for the player
