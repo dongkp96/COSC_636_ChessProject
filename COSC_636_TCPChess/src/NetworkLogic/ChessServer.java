@@ -11,6 +11,13 @@ import ChessLogic.GameSession;
 
 
 public class ChessServer {
+     public static void main(String[] args) {
+    try {
+        new ChessServer(9000).start();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
     private final int port;
     private ServerSocket serverSocket;
 
@@ -27,6 +34,7 @@ public class ChessServer {
         this.port = port;
     }
 
+   
     /**
      * Start() method used to establish the server via the server socket and
      * take connections to client sockets. Pairs the clients together and provides
@@ -137,7 +145,7 @@ public class ChessServer {
             p1.setColor(Color.BLACK);
             p2.setColor(Color.WHITE);
         }
-
+    String initialBoard = game.getCurrentBoard();
         p1.setGameSession(game);
         p2.setGameSession(game);
 
@@ -146,7 +154,10 @@ public class ChessServer {
 
         p1.sendMessage("MATCH_STARTED " + p2.getUsername());
         p2.sendMessage("MATCH_STARTED " + p1.getUsername());
+        p1.sendMessage(initialBoard);
+        p2.sendMessage(initialBoard);
     }
+
 
     private static void removeFromQueues(ClientHandler player) {
         autoQueue.remove(player);

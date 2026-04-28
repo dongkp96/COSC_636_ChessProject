@@ -14,7 +14,7 @@ public class ChessClient {
             //used to handle input from the terminal for the player
             System.out.println("Please provide the IP address for the server");
             String ipAddress = input.nextLine();
-            Socket socket = new Socket(ipAddress, 50);
+            Socket socket = new Socket(ipAddress, 9000);
             //Establishes IP address for Socket
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             //to read messages from the Client Handler
@@ -70,8 +70,15 @@ public class ChessClient {
                 //A. reads the command response
                 if(commandResponse.contains("MATCH_STARTED")){
                     System.out.println(commandResponse);
+                      System.out.println(reader.readLine().replace("|", "\n"));
                     break;
                     //A1: addresses if MATCH_STARTED condition is met, so loop can move onto game loop
+                }
+                
+                if(commandResponse.startsWith("CHALLENGE:")){
+                    System.out.println(commandResponse);
+                    System.out.println("Type ACCEPT or REJECT:");
+                    continue;
                 }
 
                 if(command.toUpperCase().contains("MENU")){
@@ -81,26 +88,41 @@ public class ChessClient {
                 }
                 //A2: reads the command menu if command was sent to ask for menu
 
-                if((command.toUpperCase().contains("AUTO") || command.toUpperCase().contains(
-                        "WAIT") || command.toUpperCase().contains("PLAY"))&& !commandResponse.contains("ERROR")){
-                    System.out.println("Press Enter to check if match has been found...");
+
+                if((command.toUpperCase().contains("AUTO") || command.toUpperCase().contains("WAIT"))
+                        && !commandResponse.contains("ERROR")){
+                    System.out.println("Press Enter to check status, or type ACCEPT/REJECT for challenges...");
                     while(true){
-                        input.nextLine();
-                        writer.println("CHECK");
+                        String pollInput = input.nextLine().trim();
+                        
+                        if(pollInput.isEmpty()){
+                            writer.println("CHECK");
+                        } else {
+                            writer.println(pollInput);
+                        }
+                        
                         commandResponse = reader.readLine();
+                        
                         if(commandResponse.contains("MATCH_STARTED")){
                             System.out.println(commandResponse);
+                            System.out.println(reader.readLine().replace("|", "\n"));
                             break;
                         }
+                        
+                        if(commandResponse.startsWith("CHALLENGE:")){
+                            System.out.println(commandResponse);
+                            System.out.println("Type ACCEPT or REJECT:");
+                            continue; 
+                        }
+                        
                         System.out.println(commandResponse);
                     }
                     break;
-                    /*A3. Used to check if previous command was auto or wait, block
+                }
+                 /*A3. Used to check if previous command was auto or wait, block
                     adjusts for the WAIT or AUTO process for matchmaking, so no incorrect
                     reads are done
                     */
-
-                }
 
                 command = input.nextLine();
                 while(command.isBlank()){
@@ -114,6 +136,7 @@ public class ChessClient {
                 commandResponse = reader.readLine();
                 if(commandResponse.contains("MATCH_STARTED")){
                     System.out.println(commandResponse);
+                    System.out.println(reader.readLine().replace("|", "\n")); // ← add
                     break;
                 }
                 System.out.println(commandResponse);
@@ -127,9 +150,10 @@ public class ChessClient {
                         commandResponse = reader.readLine();
                         if(commandResponse.contains("MATCH_STARTED")){
                             System.out.println(commandResponse);
+                            System.out.println(reader.readLine().replace("|", "\n")); // ← add
                             break;
                         }
-                        System.out.println(commandResponse);
+                        System.out.println(commandResponse.replace("|", "\n"));
                     }
                     break;
                 }
@@ -137,6 +161,7 @@ public class ChessClient {
             }
 
             System.out.println(reader.readLine());
+            System.out.println(reader.readLine().replace("|", "\n"));
             //Used to read welcome to game message from ClientHandler
 
 
@@ -169,9 +194,12 @@ public class ChessClient {
                     System.out.println("You did not enter a command. Please enter a command ");
                     move = input.nextLine();
                 }
+                //System.out.println(move);
+
+                System.out.println("[CLIENT] about to send: " + move);
                 writer.println(move);
                 //C. gets input for the move and ensures move is not blank, then sends move
-
+                System.out.println("[CLIENT] sent move, waiting for confirmation...");
 
                 confirmation = reader.readLine();
                 if(confirmation == null){
@@ -199,7 +227,7 @@ public class ChessClient {
 
             }
 
-            System.out.println("Client has exited");
+            System.out.println("Opponent has exited");
             socket.close();
             //9. Socket is closed
 

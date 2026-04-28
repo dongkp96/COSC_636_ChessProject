@@ -74,37 +74,36 @@ public class ChessBoard {
 
     /*
     * Method used to display the chessBoard state in the following state
-    *           0   1   2   3   4   5   6   7
-            A   BR  BG  BB  BQ  BK  BB  BG  BR
-            B   BP  BP  BP  BP  BP  BP  BP  BP
-            C   O   O   O   O   O   O   O   O
-            D   O   O   O   O   O   O   O   O
-            E   O   O   O   O   O   O   O   O
-            F   O   O   O   O   O   O   O   O
-            G   WP  WP  WP  WP  WP  WP  WP  WP
-            H   WR  WG  WB  WK  WQ  WB  WG  WR
+           a   b   c   d   e   f   g   h
+    8     BR  BG  BB  BQ  BK  BB  BG  BR
+    7     BP  BP  BP  BP  BP  BP  BP  BP
+    6     O   O   O   O   O   O   O   O
+    5     O   O   O   O   O   O   O   O
+    4     O   O   O   O   O   O   O   O
+    3     O   O   O   O   O   O   O   O
+    2     WP  WP  WP  WP  WP  WP  WP  WP
+    1     WR  WG  WB  WQ  WK  WB  WG  WR
     * Once the server and client is finished, this should return a string instead IDK
     * */
     public String getBoard(){
         StringBuilder sb = new StringBuilder();
 
-// Print column headers (numbers)
-        sb.append(String.format("%-8s", ""));
+ // Column headers: a through h
+    sb.append(String.format("%-6s", ""));
+    for (int col = 0; col < 8; col++) {
+        sb.append(String.format("%-4s", (char)('a' + col)));
+    }
+    sb.append("|");
+
+    // Row labels: rank 8 at top (row 0), rank 1 at bottom (row 7)
+    for (int row = 0; row < 8; row++) {
+        int rank = 8 - row;  // row 0 = rank 8, row 7 = rank 1
+        sb.append(String.format("%-6s", rank));
         for (int col = 0; col < 8; col++) {
-            sb.append(String.format("%-4s", col));
+            sb.append(String.format("%-4s", board[row][col].getSymbol()));
         }
         sb.append("|");
-
-// Print each row with letter labels
-        char rowLabel = 'A';
-        for (int row = 0; row < 8; row++) {
-            sb.append(String.format("%-8s", rowLabel));
-            for (int col = 0; col < 8; col++) {
-                sb.append(String.format("%-4s", board[row][col].getSymbol()));
-            }
-            sb.append("|");
-            rowLabel++;
-        }
+    }
 
         return sb.toString();
     }
