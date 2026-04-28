@@ -9,232 +9,194 @@ import java.util.Scanner;
 
 public class ChessClient {
     public static void main(String[] args) {
-        try{
+        try {
             Scanner input = new Scanner(System.in);
-            //used to handle input from the terminal for the player
+
             System.out.println("Please provide the IP address for the server");
             String ipAddress = input.nextLine();
             Socket socket = new Socket(ipAddress, 9000);
-            //Establishes IP address for Socket
+
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            //to read messages from the Client Handler
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-            //used to write to the client handler
 
+            // ── 1. USERNAME SETUP ──────────────────────────────────────────
             System.out.println(reader.readLine());
-            //1. prints the message to do your username
-
             String username = input.nextLine();
-            //2.takes scanner input for username
-
-            while(username.isBlank()){
-                System.out.println("Invalid username. Username must contain at least 1 letter or " +
-                        "number)");
+            while (username.isBlank()) {
+                System.out.println("Invalid username. Must contain at least 1 letter or number.");
                 username = input.nextLine();
             }
-            //Ensures client side entry with username is correct
-
             writer.println(username);
-            //3.sends username to client handler to check
 
             String confirmation = reader.readLine();
-            while(!confirmation.startsWith("VALID")){
+            while (!confirmation.startsWith("VALID")) {
                 System.out.println(confirmation);
                 username = input.nextLine();
                 writer.println(username);
                 confirmation = reader.readLine();
             }
-            //works with invalid username until its valid
-
             System.out.println(confirmation);
-            //4.used to read username set message
 
-
+            // ── 2. COMMAND MENU ────────────────────────────────────────────
             System.out.println(reader.readLine().replace("|", "\n"));
-            //5. reads initial command menu message
 
-            String command = input.nextLine();
-            while(command.isBlank()){
-                System.out.println("Command cannot be left blank. Please input a valid " +
-                        "command as listed before");
-                command = input.nextLine();
+            // ── 3. LOBBY LOOP ──────────────────────────────────────────────
+            // State flags
+            boolean waitingForMatch = false; // true after AUTO, WAIT, or PLAY sent
+            boolean acceptSent      = false; // true after ACCEPT typed, stops re-prompting
+
+            // Send the first command
+            String command = input.nextLine().trim();
+            while (command.isBlank()) {
+                System.out.println("Command cannot be blank.");
+                command = input.nextLine().trim();
             }
             writer.println(command);
-            //6.deals with first command after initial command menu message
 
-            String commandResponse;
-
-            //7. Game lobby loop
-            while(true){
-                commandResponse = reader.readLine();
-                //A. reads the command response
-                if(commandResponse.contains("MATCH_STARTED")){
-                    System.out.println(commandResponse);
-                      System.out.println(reader.readLine().replace("|", "\n"));
-                    break;
-                    //A1: addresses if MATCH_STARTED condition is met, so loop can move onto game loop
-                }
-                
-                if(commandResponse.startsWith("CHALLENGE:")){
-                    System.out.println(commandResponse);
-                    System.out.println("Type ACCEPT or REJECT:");
-                    continue;
-                }
-
-                if(command.toUpperCase().contains("MENU")){
-                    System.out.println(commandResponse.replace("|", "\n"));
-                }else{
-                    System.out.println(commandResponse);
-                }
-                //A2: reads the command menu if command was sent to ask for menu
-
-
-                if((command.toUpperCase().contains("AUTO") || command.toUpperCase().contains("WAIT"))
-                        && !commandResponse.contains("ERROR")){
-                    System.out.println("Press Enter to check status, or type ACCEPT/REJECT for challenges...");
-                    while(true){
-                        String pollInput = input.nextLine().trim();
-                        
-                        if(pollInput.isEmpty()){
-                            writer.println("CHECK");
-                        } else {
-                            writer.println(pollInput);
-                        }
-                        
-                        commandResponse = reader.readLine();
-                        
-                        if(commandResponse.contains("MATCH_STARTED")){
-                            System.out.println(commandResponse);
-                            System.out.println(reader.readLine().replace("|", "\n"));
-                            break;
-                        }
-                        
-                        if(commandResponse.startsWith("CHALLENGE:")){
-                            System.out.println(commandResponse);
-                            System.out.println("Type ACCEPT or REJECT:");
-                            continue; 
-                        }
-                        
-                        System.out.println(commandResponse);
-                    }
-                    break;
-                }
-                 /*A3. Used to check if previous command was auto or wait, block
-                    adjusts for the WAIT or AUTO process for matchmaking, so no incorrect
-                    reads are done
-                    */
-
-                command = input.nextLine();
-                while(command.isBlank()){
-                    System.out.println("Command cannot be left blank. Please input a valid " +
-                            "command as listed before");
-                    command = input.nextLine();
-                }
-                writer.println(command);
-                //B. Takes command from client and sends command to handler
-
-                commandResponse = reader.readLine();
-                if(commandResponse.contains("MATCH_STARTED")){
-                    System.out.println(commandResponse);
-                    System.out.println(reader.readLine().replace("|", "\n")); // ← add
-                    break;
-                }
-                System.out.println(commandResponse);
-                //C. Receives and reads response from the command
-
-                if(command.toUpperCase().contains("PLAY") && !commandResponse.contains("ERROR")){
-                    System.out.println("Press Enter to check if opponent has accepted...");
-                    while(true){
-                        input.nextLine();
-                        writer.println("CHECK");
-                        commandResponse = reader.readLine();
-                        if(commandResponse.contains("MATCH_STARTED")){
-                            System.out.println(commandResponse);
-                            System.out.println(reader.readLine().replace("|", "\n")); // ← add
-                            break;
-                        }
-                        System.out.println(commandResponse.replace("|", "\n"));
-                    }
-                    break;
-                }
-
+            // Determine initial waiting state
+            String cmd = command.toUpperCase();
+            if (cmd.equals("AUTO") || cmd.equals("WAIT") || cmd.startsWith("PLAY")) {
+                waitingForMatch = true;
             }
 
-            System.out.println(reader.readLine());
-            System.out.println(reader.readLine().replace("|", "\n"));
-            //Used to read welcome to game message from ClientHandler
+            while (true) {
+                // ── A. Read one line from the server ──────────────────────
+                String serverMsg = reader.readLine();
+                if (serverMsg == null) {
+                    System.out.println("Server disconnected.");
+                    socket.close();
+                    return;
+                }
 
-
-            String move = null;
-            String board = null;
-            String fromClient = null;
-            // initializes the String move, board, and fromClient, that will be the move holder
-
-            //8. Game loop (null breaks used to check if socket is still connected to handler
-            while(true){
-                fromClient = reader.readLine();
-                if(fromClient == null){
+                // ── B. MATCH_STARTED → exit lobby ─────────────────────────
+                if (serverMsg.contains("MATCH_STARTED")) {
+                    System.out.println(serverMsg);
                     break;
                 }
-                System.out.println(fromClient.replace("|", "\n"));
-                //A.reads the board being sent to the player
 
-                fromClient = reader.readLine();
-                if(fromClient == null){
-                    break;
+                // ── C. CHALLENGE arrived ──────────────────────────────────
+                if (serverMsg.startsWith("CHALLENGE:")) {
+                    if (!acceptSent) {
+                        System.out.println(serverMsg);
+                        System.out.println("Type ACCEPT or REJECT (or press Enter to wait):");
+                    }
+                    // Don't send anything — wait for player input below
                 }
-                System.out.println(fromClient);
-                //B.reads the "it is your turn message"
 
-                System.out.println("Commands that can be entered: ");
-                System.out.println("Move = MOVE: followed by the desired coordinates such as e2 " +
-                        "e4");
-                move = input.nextLine();
-                while(move.isBlank()){
-                    System.out.println("You did not enter a command. Please enter a command ");
-                    move = input.nextLine();
+                // ── D. REJECTED notification ──────────────────────────────
+                else if (serverMsg.startsWith("REJECTED:")) {
+                    System.out.println(serverMsg);
+                    waitingForMatch = false;
+                    acceptSent = false;
+                    System.out.println("Challenge rejected. Enter a command:");
                 }
-                //System.out.println(move);
 
-                System.out.println("[CLIENT] about to send: " + move);
+                // ── E. ERROR response ──────────────────────────────────────
+                else if (serverMsg.startsWith("ERROR")) {
+                    System.out.println(serverMsg);
+                    waitingForMatch = false;
+                    acceptSent = false;
+                }
+
+                // ── F. Normal response ────────────────────────────────────
+                else {
+                    System.out.println(serverMsg.replace("|", "\n"));
+                }
+
+                // ── G. Decide what to send next ───────────────────────────
+                if (waitingForMatch) {
+                    // We're waiting — read player input (Enter = CHECK)
+                    String pollInput = input.nextLine().trim();
+
+                    if (pollInput.isEmpty()) {
+                        // Plain Enter → CHECK
+                        writer.println("CHECK");
+                    } else {
+                        String upperPoll = pollInput.toUpperCase();
+                        writer.println(pollInput);
+
+                        if (upperPoll.equals("ACCEPT")) {
+                            acceptSent = true;
+                            // Don't reset waitingForMatch — keep draining until MATCH_STARTED
+                        } else if (upperPoll.equals("REJECT")) {
+                            waitingForMatch = false;
+                            acceptSent = false;
+                            System.out.println("Challenge rejected. Enter a command:");
+                        }
+                        // Any other input while waiting (e.g. MENU, LIST) just sends it
+                    }
+
+                } else {
+                    // Not waiting — read a full command from player
+                    command = input.nextLine().trim();
+                    while (command.isBlank()) {
+                        System.out.println("Command cannot be blank.");
+                        command = input.nextLine().trim();
+                    }
+                    writer.println(command);
+
+                    cmd = command.toUpperCase();
+                    if (cmd.equals("AUTO") || cmd.equals("WAIT") || cmd.startsWith("PLAY")) {
+                        waitingForMatch = true;
+                        acceptSent = false;
+                    }
+                }
+            }
+
+            // ── 4. PRE-GAME: welcome + initial board ───────────────────────
+            System.out.println(reader.readLine());                          // "Welcome X you will be COLOR"
+            System.out.println(reader.readLine().replace("|", "\n"));      // initial board
+
+            // ── 5. GAME LOOP ───────────────────────────────────────────────
+            while (true) {
+
+                // A. Read board at start of our turn
+                String fromServer = reader.readLine();
+                if (fromServer == null) break;
+                System.out.println(fromServer.replace("|", "\n"));
+
+                // B. Read "it is your turn" message
+                fromServer = reader.readLine();
+                if (fromServer == null) break;
+                System.out.println(fromServer);
+
+                // C. Get move from player
+                System.out.println("Commands: MOVE: <from> <to>  (e.g. MOVE: e2 e4) | QUIT:");
+                String move = input.nextLine().trim();
+                while (move.isBlank()) {
+                    System.out.println("Command cannot be blank.");
+                    move = input.nextLine().trim();
+                }
                 writer.println(move);
-                //C. gets input for the move and ensures move is not blank, then sends move
-                System.out.println("[CLIENT] sent move, waiting for confirmation...");
 
+                // D. Read confirmation (loop on invalid)
                 confirmation = reader.readLine();
-                if(confirmation == null){
-                    break;
-                }
-                while(!confirmation.startsWith("VALID")){
-                    move = input.nextLine();
+                if (confirmation == null) break;
+                while (!confirmation.startsWith("VALID")) {
+                    System.out.println(confirmation);
+                    move = input.nextLine().trim();
                     writer.println(move);
                     confirmation = reader.readLine();
+                    if (confirmation == null) break;
                 }
-                //D.obtains the confirmation of the move if it's valid or not
+                System.out.println(confirmation);
 
-                if(move.startsWith("QUIT:")){
-                    System.out.println(confirmation);
+                // E. QUIT check
+                if (move.toUpperCase().startsWith("QUIT")) {
                     break;
                 }
 
-                board = reader.readLine();
-                if(board == null){
-                    break;
-                }
+                // F. Read updated board after our move
+                String board = reader.readLine();
+                if (board == null) break;
                 System.out.println(board.replace("|", "\n"));
-                //E.prints the board out to the player
-
-
             }
 
-            System.out.println("Opponent has exited");
+            System.out.println("Game over. Thanks for playing!");
             socket.close();
-            //9. Socket is closed
 
-        }catch(IOException e){
-            System.out.println(e);
+        } catch (IOException e) {
+            System.out.println("Connection error: " + e.getMessage());
         }
-
     }
-
 }
