@@ -145,7 +145,6 @@ public class ChessServer {
             p1.setColor(Color.BLACK);
             p2.setColor(Color.WHITE);
         }
-    String initialBoard = game.getCurrentBoard();
         p1.setGameSession(game);
         p2.setGameSession(game);
 
@@ -154,8 +153,6 @@ public class ChessServer {
 
         p1.sendMessage("MATCH_STARTED " + p2.getUsername());
         p2.sendMessage("MATCH_STARTED " + p1.getUsername());
-        p1.sendMessage(initialBoard);
-        p2.sendMessage(initialBoard);
     }
 
 

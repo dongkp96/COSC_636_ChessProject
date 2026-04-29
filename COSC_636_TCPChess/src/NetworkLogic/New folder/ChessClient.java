@@ -144,15 +144,17 @@ public class ChessClient {
             }
 
             // ── 4. PRE-GAME: welcome + initial board ───────────────────────
-            System.out.println(reader.readLine());                         // "Welcome X you will be COLOR"
-            System.out.println(reader.readLine().replace("|", "\n"));     // initial board
+            System.out.println(reader.readLine());                          // "Welcome X you will be COLOR"
+            //System.out.println(reader.readLine().replace("|", "\n"));      // initial board
+            System.out.println(reader.readLine());
             // ── 5. GAME LOOP ───────────────────────────────────────────────
             while (true) {
 
-                // A. Read board at start of our turn (sent by handler at top of while(inGame))
+                // A. Read board at start of our turn
                 String fromServer = reader.readLine();
                 if (fromServer == null) break;
-                System.out.println(fromServer.replace("|", "\n"));
+               // System.out.println(fromServer.replace("|", "\n"));
+               System.out.println(fromServer);
 
                 // B. Read "it is your turn" message
                 fromServer = reader.readLine();
@@ -163,7 +165,7 @@ public class ChessClient {
                 System.out.println("Commands: MOVE: <from> <to>  (e.g. MOVE: e2 e4) | QUIT:");
                 String move = input.nextLine().trim();
                 while (move.isBlank()) {
-                   // System.out.println("Command cannot be blank.");
+                    System.out.println("Command cannot be blank.");
                     move = input.nextLine().trim();
                 }
                 writer.println(move);
@@ -185,7 +187,7 @@ public class ChessClient {
                     break;
                 }
 
-                // F. Read updated board sent back to us after our valid move
+                // F. Read updated board after our move
                 String board = reader.readLine();
                 if (board == null) break;
                 System.out.println(board.replace("|", "\n"));
