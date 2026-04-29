@@ -1,237 +1,334 @@
 package NetworkLogic;
+
+import ChessLogic.Color;
+import ChessLogic.GameSession;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import ChessLogic.Color;
-import ChessLogic.GameSession;
-import java.net.SocketTimeoutException;
-
-public class ClientHandler implements Runnable{
-
+public class ClientHandler implements Runnable {
     private final Socket socket;
+
     private ClientHandler opponent;
     private GameSession game;
     private String username;
     private Color color;
+
+    private BufferedReader reader;
     private PrintWriter writer;
+
     private volatile boolean inGame = false;
     private volatile String pendingChallenger = null;
-    public ClientHandler(Socket socket){
+
+    public ClientHandler(Socket socket) {
         this.socket = socket;
     }
 
     @Override
-    public void run(){
+    public void run() {
         try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             writer = new PrintWriter(socket.getOutputStream(), true);
-            String move = null;
-            String toClient = null;
-            String fromClient = null;
+            reader = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream())
+            );
 
-            writer.println("Please enter a username for you to use (username must contain at " +
-                    "least 1 letter or number: ");
+            writer = new PrintWriter(
+                    socket.getOutputStream(),
+                    true
+            );
+
+            setupUsername();
+            runLobby();
+
+            if (inGame) {
+                runGame();
+            }
+
+        } catch (IOException e) {
+            System.out.println("Client disconnected: " + e.getMessage());
+
+        } finally {
+            ChessServer.removeClient(this);
+
+            if (opponent != null) {
+                opponent.notifyOpponentQuit();
+            }
+
+            try {
+                socket.close();
+            } catch (IOException ignored) {
+            }
+        }
+    }
+
+    private void setupUsername() throws IOException {
+        while (true) {
+            writer.println("Enter username:");
 
             String name = reader.readLine();
-            while(name.isBlank()){
-                writer.println("Please enter a username for you to use (username must contain at " +
-                        "least 1 letter or number: ");
-                name = reader.readLine();
+
+            if (name == null) {
+                throw new IOException("Client disconnected during username setup.");
+            }
+
+            name = name.trim();
+
+            if (name.isBlank()) {
+                writer.println("ERROR: Username cannot be blank.");
+                continue;
             }
 
             if (!ChessServer.registerClient(name, this)) {
-                writer.println("ERROR: Username already taken");
-                socket.close();
-                return;
-            }else {
-                this.setUserName(name);
-                writer.println("VALID: "+ this.username +" set as username");
-            }
-            /*
-            * 1. Logic for obtaining username and setting username for player
-            * */
-
-
-            socket.setSoTimeout(10000);
-            //2Sets socket timer so that no processes can block forever or gets stuck forever
-
-            //3. GameLobby logic
-            writer.println("Commands: AUTO->auto match | WAIT->join waiting list | LIST->view players | PLAY <name>->challenge player");
-            //A1. Sends initial command list
-
-            while(!inGame) {
-                try{
-                    fromClient = reader.readLine();
-                }catch(SocketTimeoutException e){
-                    if(inGame){
-                        break;
-                    }
-                    continue;
-                }
-                //A. try/catch for if timeout occurs then it breaks or if successful obtains
-                // client input
-
-                if (fromClient == null) return;
-                //null check to see if client disconnected
-
-                String[] parts = fromClient.split(" ");
-                String command = parts[0].toUpperCase();
-                //B. Processes Client input
-
-                switch (command) {
-                    case "AUTO":
-                        try {
-                        ChessServer.enterAutoQueue(this);
-                        writer.println("Entered auto queue...");
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            writer.println("Error: Failed to enter auto queue");
-                        }
-                        break;
-                        //Logic for autoqueueing
-                    case "WAIT":
-                        ChessServer.enterWaitingList(this);
-                        writer.println("Added to waiting list...");
-                        break;
-                        //logic for WAIT command
-
-                    case "LIST":
-                        writer.println(ChessServer.getWaitingList(this.username));
-                        break;
-                        //logic for listing available players
-
-                    case "PLAY":
-                        if (parts.length < 2) {
-                            writer.println("ERROR: specify opponent");
-                            break;
-                        }
-
-                        boolean success = ChessServer.startMatch(this, parts[1]);
-                        if (!success) {
-                            writer.println("ERROR: opponent not available");
-                        }
-                        break;
-                    case "MENU":
-                        writer.println("Commands: AUTO->auto match | WAIT->join waiting list | LIST->view players | PLAY <name>->challenge player");
-                        break;
-                        //logic for MENU command to resend MENU
-                    case "CHECK":
-                        if(inGame){
-                            writer.println("MATCH_STARTED: Opponent is " + this.opponent.getUsername() );
-                        }else{
-                            writer.println("Still waiting");
-                        }
-                        break;
-                        //logic for when player is in the auto queue or waiting
-                    case "ACCEPT":
-                        if(pendingChallenger == null){
-                            writer.println("No pending challenge");
-                            break;
-                        }
-                        ClientHandler challenger = ChessServer.getClient(pendingChallenger);
-                        if(challenger == null){
-                            writer.println("ERROR: challenger disconnected");
-                            pendingChallenger = null;
-                            break;
-                        }
-                        ChessServer.startGame(this, challenger);
-                        pendingChallenger = null;
-                        break;
-
-                    case "REJECT":
-                        if(pendingChallenger == null){
-                            writer.println("No pending challenge");
-                            break;
-                        }
-                        ClientHandler rejectedChallenger = ChessServer.getClient(pendingChallenger);
-                        if(rejectedChallenger != null){
-                            rejectedChallenger.sendMessage("REJECTED: " + this.username + " rejected your challenge");
-                        }
-                        writer.println("Challenge rejected");
-                        pendingChallenger = null;
-                        break;
-                    default:
-                        writer.println("INVALID COMMAND");
-                }
-            }
-            
-
-
-
-            //4.Game logic
-            writer.println("Welcome " + this.username + " you will be "+ this.color + " in the " + "game");
-            //sends welcome message
-            socket.setSoTimeout(0);
-            //removes timeout so players can just wait for each turn instead being on a timer
-
-            while(true){
-                game.checkTurn(this.color);
-                //A.Makes the Client Handler wait if it's not their turn
-
-                if(!this.inGame){
-                    break;
-                }
-                //A1. If the opponent quits, this gets triggered and ends the game for the
-                // handler and Client
-
-                writer.println(this.game.getCurrentBoard());
-                //B. Once it's the players turn then board is printed
-
-                writer.println(this.color + ", it is your turn. Please submit a move: ");
-                //C. sends the message that it is there turn
-
-                do{
-                    move = reader.readLine();
-                    if(move == null){
-                        break;
-                    }
-                    move = move.toUpperCase();
-                    String[] moveParts = move.split(":");
-                    switch(moveParts[0]){
-                        case "MOVE":
-                            toClient = game.ProcessMove(moveParts[1].stripLeading());
-                            writer.println(toClient);
-                            break;
-                        case "QUIT":
-                            toClient = "VALID: You have decided to quit the game. Goodbye.";
-                            writer.println(toClient);
-                            opponent.notifyOpponentQuit();
-                            break;
-                        default:
-                            toClient = "INVALID COMMAND";
-                            writer.println(toClient);
-                    }
-                }while(!toClient.startsWith("VALID"));
-                //D. Logic for handling the different commands from the client and checking validity
-
-                if(move == null || move.startsWith("QUIT")){
-                    break;
-                }
-                //E. QUIT logic
-
-                writer.println(this.game.getCurrentBoard());
-                //F. if move is valid, sends the board state again to the client
-
-                game.switchTurn();
-                //E.switches the turns
-
+                writer.println("ERROR: Username already taken.");
+                continue;
             }
 
-
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-              ChessServer.removeClient(this);
-        try { socket.close(); } catch (IOException ignored) {}
+            this.username = name;
+            writer.println("VALID: Username set to " + username);
+            break;
         }
     }
+
+    private void runLobby() throws IOException {
+        sendMenu();
+
+        while (!inGame) {
+            String input = reader.readLine();
+
+            if (input == null) {
+                throw new IOException("Client disconnected in lobby.");
+            }
+
+            input = input.trim();
+
+            if (input.isBlank()) {
+                writer.println("ERROR: Command cannot be blank.");
+                continue;
+            }
+
+            String[] parts = input.split("\\s+");
+            String command = parts[0].toUpperCase();
+
+            switch (command) {
+                case "AUTO":
+                    try {
+                        ChessServer.enterAutoQueue(this);
+                        writer.println("Entered auto queue. Wait for another player.");
+
+                        while (!inGame) {
+                            sleep(200);
+                        }
+
+                        return;
+
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        writer.println("ERROR: Could not enter auto queue.");
+                        return;
+                    }
+
+                case "WAIT":
+                    ChessServer.enterWaitingList(this);
+                    writer.println("Added to waiting list.");
+                    break;
+
+                case "LIST":
+                    writer.println(ChessServer.getWaitingList(username));
+                    break;
+
+                case "PLAY":
+                    if (parts.length < 2) {
+                        writer.println("ERROR: Use PLAY username");
+                        break;
+                    }
+
+                    boolean success = ChessServer.startMatch(this, parts[1]);
+
+                    if (!success) {
+                        writer.println("ERROR: Opponent not available.");
+                        break;
+                    }
+
+                    while (!inGame) {
+                        try {
+                            sleep(200);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            writer.println("ERROR: Challenge wait was interrupted.");
+                            return;
+                        }
+                    }
+
+                    return;
+
+                case "ACCEPT":
+                    acceptChallenge();
+
+                    if (inGame) {
+                        return;
+                    }
+
+                    break;
+
+                case "REJECT":
+                    rejectChallenge();
+                    break;
+
+                case "CHECK":
+                    if (inGame) {
+                        writer.println("MATCH_STARTED: Opponent is " + opponent.getUsername());
+                        return;
+                    } else {
+                        writer.println("Still waiting...");
+                    }
+                    break;
+
+                case "MENU":
+                    sendMenu();
+                    break;
+
+                case "QUIT":
+                    writer.println("Goodbye.");
+                    return;
+
+                default:
+                    writer.println("ERROR: Invalid command.");
+                    sendMenu();
+                    break;
+            }
+        }
+    }
+
+    private void sendMenu() {
+        writer.println("Commands: AUTO | WAIT | LIST | PLAY username | ACCEPT | REJECT | CHECK | MENU | QUIT");
+    }
+
+    private void acceptChallenge() {
+        if (pendingChallenger == null) {
+            writer.println("ERROR: No pending challenge.");
+            return;
+        }
+
+        ClientHandler challenger = ChessServer.getClient(pendingChallenger);
+
+        if (challenger == null) {
+            writer.println("ERROR: Challenger disconnected.");
+            pendingChallenger = null;
+            return;
+        }
+
+        ChessServer.startGame(challenger, this);
+        pendingChallenger = null;
+    }
+
+    private void rejectChallenge() {
+        if (pendingChallenger == null) {
+            writer.println("ERROR: No pending challenge.");
+            return;
+        }
+
+        ClientHandler challenger = ChessServer.getClient(pendingChallenger);
+
+        if (challenger != null) {
+            challenger.sendMessage("REJECTED: " + username + " rejected your challenge.");
+        }
+
+        writer.println("Challenge rejected.");
+        pendingChallenger = null;
+    }
+
+    private void runGame() throws IOException {
+        writer.println("Welcome " + username + ". You are " + color + ".");
+        writer.println("Move format: MOVE A 0 B 0");
+        writer.println("Example: MOVE G 4 E 4 moves the white pawn forward two spaces.");
+        writer.println("Type QUIT to leave the game.");
+
+        // Show the board once when the game starts
+        writer.println(game.getCurrentBoard());
+
+        while (inGame) {
+
+            /*
+             * If it is not this player's turn, only print the waiting message once.
+             * The loop still checks every second, but it does not spam the console.
+             */
+            boolean alreadyPrintedWaiting = false;
+
+            while (inGame && game.getCurrentTurn() != color) {
+                if (!alreadyPrintedWaiting) {
+                    writer.println("Waiting for " + game.getCurrentTurn() + " to move...");
+                    alreadyPrintedWaiting = true;
+                }
+
+                try {
+                    sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    writer.println("ERROR: Game interrupted.");
+                    return;
+                }
+            }
+
+            if (!inGame) {
+                break;
+            }
+
+            writer.println(color + ", it is your turn. Enter your move:");
+
+            String input = reader.readLine();
+
+            if (input == null) {
+                throw new IOException("Client disconnected during game.");
+            }
+
+            input = input.trim();
+
+            if (input.equalsIgnoreCase("QUIT")) {
+                writer.println("VALID: You quit the game.");
+
+                if (opponent != null) {
+                    opponent.sendMessage("Opponent quit the game.");
+                    opponent.notifyOpponentQuit();
+                }
+
+                notifyOpponentQuit();
+                break;
+            }
+
+            if (!input.toUpperCase().startsWith("MOVE ")) {
+                writer.println("INVALID: Use MOVE fromRow fromCol toRow toCol. Example: MOVE G 4 E 4");
+                continue;
+            }
+
+            String move = input.substring(5);
+            String result = game.ProcessMove(move);
+
+            writer.println(result);
+
+            if (result.startsWith("VALID")) {
+                game.switchTurn();
+
+                writer.println("Move accepted. Waiting for opponent...");
+                writer.println(game.getCurrentBoard());
+
+                if (opponent != null) {
+                    opponent.sendMessage("Opponent moved. It should now be your turn.");
+                    opponent.sendMessage(game.getCurrentBoard());
+                }
+            }
+        }
+    }
+
+    private void sleep(long milliseconds) throws InterruptedException {
+        Thread.sleep(milliseconds);
+    }
+
     public boolean isInGame() {
         return inGame;
     }
+
     public String getUsername() {
         return username;
     }
@@ -239,37 +336,34 @@ public class ClientHandler implements Runnable{
     public void setInGame(boolean inGame) {
         this.inGame = inGame;
     }
-    public void setOpponent(ClientHandler opponent){
+
+    public void setOpponent(ClientHandler opponent) {
         this.opponent = opponent;
     }
 
-    public void setGameSession(GameSession game){
+    public void setGameSession(GameSession game) {
         this.game = game;
     }
 
-    public void setUserName(String name){
-        this.username = name;
+    public void setColor(Color color) {
+        this.color = color;
     }
 
-    public void setColor(Color color){
-        this.color = color;
+    public void setPendingChallenger(String username) {
+        this.pendingChallenger = username;
     }
 
     public void sendMessage(String msg) {
         if (writer != null) {
             writer.println(msg);
         }
-
     }
 
-    public synchronized void notifyOpponentQuit(){
+    public synchronized void notifyOpponentQuit() {
         this.inGame = false;
-        if(game !=null){
+
+        if (game != null) {
             game.endGame();
         }
-    }
-
-    public void setPendingChallenger(String username){
-        this.pendingChallenger = username;
     }
 }

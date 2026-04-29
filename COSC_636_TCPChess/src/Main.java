@@ -1,7 +1,13 @@
-import ChessLogic.*;
+import NetworkLogic.ChessServer;
+
 public class Main {
     public static void main(String[] args) {
-        ChessBoard board = new ChessBoard();
-
+        try {
+            ChessServer server = new ChessServer(5000);
+            server.start();
+        } catch (Exception e) {
+            System.out.println("Server error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
