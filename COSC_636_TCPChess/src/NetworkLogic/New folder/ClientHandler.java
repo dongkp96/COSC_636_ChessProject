@@ -121,8 +121,7 @@ public class ClientHandler implements Runnable{
                         //logic for MENU command to resend MENU
                     case "CHECK":
                         if(inGame){
-                          //writer.println("MATCH_STARTED: Opponent is " + this.opponent.getUsername() );
-                            writer.println("Game found: Opponent is " + this.opponent.getUsername() );
+                            writer.println("MATCH_STARTED: Opponent is " + this.opponent.getUsername() );
                         } else if(pendingChallenger != null){
                                  writer.println("CHALLENGE: " + pendingChallenger + " wants to play. Type ACCEPT or REJECT");
                         }else{
@@ -169,46 +168,45 @@ public class ClientHandler implements Runnable{
 
             //4.Game logic
             writer.println("Welcome " + this.username + " you will be "+ this.color + " in the " + "game");
-          //writer.println(this.game.getCurrentBoard());
+            writer.println(this.game.getCurrentBoard());
             //sends welcome message
             socket.setSoTimeout(0);
             //removes timeout so players can just wait for each turn instead being on a timer
 
             while(inGame){
                 game.checkTurn(this.color);
-                // A. Wait until it's our turn
+                //A.Makes the Client Handler wait if it's not their turn
 
                 if(!this.inGame){
                     break;
                 }
-                // A1. Opponent quit while we were waiting
+                //A1. If the opponent quits, this gets triggered and ends the game for the
+                // handler and Client
 
-                writer.println(this.game.getCurrentBoard());
-                // B. Send board at start of our turn
+                //writer.println(this.game.getCurrentBoard());
+                //B. Once it's the players turn then board is printed
+                
 
                 writer.println(this.color + ", it is your turn. Please submit a move: ");
-                // C. Send turn prompt
-
-                toClient = null;
-                // Reset toClient each turn to avoid stale VALID from previous turn
+                //C. sends the message that it is there turn
 
                 do{
                     System.out.println("[" + this.color + "] waiting for move...");
                     move = reader.readLine();
-                    System.out.println("[" + this.color + "] received: " + move);
+                     System.out.println("[" + this.color + "] received: " + move);
                     if(move == null){
                         break;
                     }
+                   // move = move.toUpperCase();
+                   // System.out.println(move);
 
-                    // Normalize "MOVE e2 e4" (no colon) to "MOVE: e2 e4"
-                    if(move.toUpperCase().startsWith("MOVE ") && !move.contains(":")){
-                        move = "MOVE:" + move.substring(4);
+                   if (move.startsWith("MOVE ")) {
+                        move = move.replace("MOVE", "MOVE:");
+                        
                     }
-
-                    String[] moveParts = move.split(":", 2);
+                    String[] moveParts = move.split(":");
                     String command = moveParts[0].trim().toUpperCase();
                     String moveArgs = moveParts.length > 1 ? moveParts[1].stripLeading() : "";
-
                     switch(command){
                         case "MOVE":
                             toClient = game.ProcessMove(moveArgs);
@@ -224,23 +222,26 @@ public class ClientHandler implements Runnable{
                             toClient = "INVALID COMMAND";
                             writer.println(toClient);
                     }
-                }while(toClient == null || !toClient.startsWith("VALID"));
-                // D. Keep looping until move is valid
+                }while(!toClient.startsWith("VALID"));
+                //D. Logic for handling the different commands from the client and checking validity
 
-                if(move == null || move.toUpperCase().startsWith("QUIT")){
+                if(move == null || move.startsWith("QUIT")){
                     break;
                 }
-                // E. Exit if quit or disconnected
-
+                //E. QUIT logic
+                 System.out.println("[" + this.color + "] move valid, sending boards");
                 String updatedBoard = this.game.getCurrentBoard();
-                writer.println(updatedBoard);        // send updated board to current player
-                //opponent.sendMessage(updatedBoard);  // push updated board to opponent
 
+                
+                writer.println(updatedBoard);
+                opponent.sendMessage(updatedBoard);
 
                 System.out.println("[" + this.color + "] boards sent, switching turn");
+                //F. if move is valid, sends the board state again to the client
 
                 game.switchTurn();
-                System.out.println("[" + this.color + "] turn switched");
+                //E.switches the turns
+        System.out.println("[" + this.color + "] turn switched");
             }
 
 

@@ -65,8 +65,16 @@ public class GameSession {
         String[] parts = move.trim().split("\\s+");
 
         if(parts.length != 4){
+            if(parts.length != 2){
             return "Invalid move format. Use: fromRow fromCol toRow toCol";
-        }
+        }}
+    if (parts.length == 2) {
+        String from = convertNotation(parts[0]);
+        String to   = convertNotation(parts[1]);
+        if (from == null || to == null) return "Invalid notation format";
+        parts = (from + " " + to).split("\\s+");
+    }
+
 
         int fromRow;
         int fromCol;
@@ -379,6 +387,17 @@ public class GameSession {
         return rowDiff <= 1 && colDiff <= 1 && !(rowDiff == 0 && colDiff == 0);
     }
 
+    private String convertNotation(String token) {
+    if (token.length() != 2) return null;
+        char colChar = Character.toLowerCase(token.charAt(0));
+        char rowChar = token.charAt(1);
+    if (colChar < 'a' || colChar > 'h') return null;
+    if (rowChar < '1' || rowChar > '8') return null;
+
+    int col = colChar - 'a';           // a=0, b=1, ..., h=7
+    int row = 8 - Character.getNumericValue(rowChar); // 1→row7, 8→row0
+    return row + " " + col;
+}
     public synchronized void endGame(){
         this.gameActive = false;
         notifyAll();
